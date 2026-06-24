@@ -2,13 +2,18 @@
   const rail = document.createElement("div");
   rail.className = "pages-rail";
 
+  const app = document.getElementById("app");
   const track = document.getElementById("track");
   const storyTitle = document.getElementById("storyTitle");
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const indicator = document.getElementById("pageIndicator");
 
-  const TOTAL = STORY.length;
+  // COVER_PAGE/END_PAGE are bookends around the numbered story - they sit
+  // in the rail (so swipe/arrow nav flows through them naturally) but are
+  // excluded from the "Page X of N" count and the dots, see updateChrome().
+  const PAGES = [COVER_PAGE, ...STORY, END_PAGE];
+  const TOTAL = PAGES.length;
   let current = 0;
   let dragOffset = 0;
   let dragging = false;
@@ -97,6 +102,16 @@
 
   function buildPage(pageData, pageIndex) {
     const page = document.createElement("section");
+
+    if (pageData.kind === "bookend") {
+      page.className = "page page--bookend";
+      page.setAttribute("aria-label", pageData.alt);
+      const frame = buildFrame(pageData, "cover", 1, "single", pageIndex === 0);
+      frame.classList.add("media-frame--bookend");
+      page.appendChild(frame);
+      return page;
+    }
+
     page.className = "page";
     page.setAttribute("aria-label", `Page ${pageData.page}: ${pageData.title}`);
 
@@ -111,6 +126,8 @@
     return page;
   }
 
+  // Dots represent only the 8 numbered story pages; rail index = dot index
+  // + 1 since COVER_PAGE occupies rail index 0.
   function buildIndicator() {
     indicator.innerHTML = "";
     STORY.forEach((_, i) => {
@@ -118,20 +135,22 @@
       dot.className = "dot";
       dot.type = "button";
       dot.setAttribute("aria-label", `Go to page ${i + 1}`);
-      dot.addEventListener("click", () => goTo(i));
+      dot.addEventListener("click", () => goTo(i + 1));
       indicator.appendChild(dot);
     });
   }
 
   function updateIndicator() {
     [...indicator.children].forEach((dot, i) => {
-      dot.classList.toggle("active", i === current);
+      dot.classList.toggle("active", i + 1 === current);
     });
   }
 
   function updateChrome() {
-    const data = STORY[current];
-    storyTitle.textContent = `Page ${data.page} of ${TOTAL} · ${data.title}`;
+    const data = PAGES[current];
+    const isBookend = data.kind === "bookend";
+    app.classList.toggle("app--bookend", isBookend);
+    if (!isBookend) storyTitle.textContent = `Page ${data.page} of ${STORY.length} · ${data.title}`;
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === TOTAL - 1;
     updateIndicator();
@@ -420,7 +439,7 @@
     frame.addEventListener("touchmove", (e) => e.stopPropagation());
   }
 
-  STORY.forEach((pageData, i) => rail.appendChild(buildPage(pageData, i)));
+  PAGES.forEach((pageData, i) => rail.appendChild(buildPage(pageData, i)));
   track.appendChild(rail);
   buildIndicator();
   setTransform(false);

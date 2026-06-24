@@ -1,0 +1,12 @@
+After I add the puzzle functionality, it occurs to me I may be able to monetize this idea of an interactive custom storybook featuring someone's real child. Maybe it's something I can sell on Etsy; parent orders an interactive storybook and send me a headshot picture of their child to "cartoonize"), I do the work and deliver it to them electronically.
+How would I deliver the final product to them for use on an iOS or Android tablet?
+For this use case (one-off personalized content per order, delivered electronically, used on iOS and Android), I'd recommend: host it at a private link and have them "Add to Home Screen." Two tempting alternatives are worse fits:
+
+A downloadable zip they open locally seems appealing ("they own a file forever") but iOS Safari doesn't handle local file:// HTML with linked JS/CSS/images reliably — there's no clean "double-click index.html" experience on a tablet. This would be a support headache specifically on the platform you most care about.
+A real native app via the App Store/Play Store is overkill and basically unworkable for a made-to-order business — each customer's storybook is unique content, and app stores aren't built for "submit a new app per order" (cost, review delays, and Apple's policies against single-purpose/template apps all work against you).
+So, the practical path:
+
+Host each order at its own URL (an unguessable slug, e.g. yoursite.com/nora-x7k2, not something indexed or guessable — these are photos of someone's kid). Netlify, Vercel, Cloudflare Pages, or GitHub Pages all have free tiers that comfortably cover this at low volume.
+Deliver via Etsy as a PDF/message with the link and a QR code plus one-line instructions: "Open this in Safari/Chrome, tap Share → Add to Home Screen." This app already has the right meta tags for that (apple-mobile-web-app-capable, etc.) — it'll launch full-screen with its own icon, no browser chrome.
+Add a small service worker to cache the app's assets on first load, so after that it works fully offline like an installed app — no recurring internet dependency, no ongoing cost difference from step 1, just one more file.
+That combination gets you "feels like a real app, works offline, no internet/app-store gatekeeping" without any of the App Store overhead. Want me to actually build the service worker / offline-caching piece now, or are you still scoping the business side first?

@@ -72,6 +72,14 @@ body {
   }
 }
 
+/* Cover/end pages fill the entire screen - hiding the header and dots lets
+   #track's flex:1 1 auto grow into the space they would have taken, rather
+   than just sitting empty above/below a smaller image. */
+.app--bookend #bookHeader,
+.app--bookend #pageIndicator {
+  display: none;
+}
+
 #bookHeader {
   flex: 0 0 auto;
   display: flex;
@@ -113,6 +121,20 @@ body {
   flex-direction: column;
   padding: 2px 12px 4px;
   overflow: hidden;
+}
+
+/* Cover/end pages: a single image filling the page edge to edge - no
+   padding, no panel border/shadow/rounding. */
+.page--bookend {
+  padding: 0;
+}
+
+.media-frame--bookend {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Hard rule: every page has exactly 2 rows (one per paragraph), stacked one

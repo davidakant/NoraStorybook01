@@ -28,6 +28,26 @@
 // gap, since the anchor corner's two edges stay flush with the frame at any
 // zoom level). `pan` and `zoom` are mutually exclusive per image. Optional
 // `zoomScale` (default 1.3) overrides how far in it zooms.
+//
+// COVER_PAGE and END_PAGE are bookends, not part of the numbered story (the
+// header's "Page X of 8" and the page-indicator dots both only count
+// STORY). Each is a single image filling the entire screen edge to edge -
+// no header, no caption, no dots while one is showing (see app.js/styles.css).
+const COVER_PAGE = {
+  kind: "bookend",
+  src: "images/cover.webp",
+  alt: "Book cover: Nora's Colorful World, A Tale of Creativity - Nora and Snowy in her art studio",
+  width: 1792,
+  height: 2400,
+};
+const END_PAGE = {
+  kind: "bookend",
+  src: "images/the-end.webp",
+  alt: "The End - Nora and Snowy waving goodbye among sunflowers and a starry painted sky",
+  width: 896,
+  height: 1200,
+};
+
 const STORY = [
   {
     page: 1,
@@ -222,6 +242,7 @@ const STORY = [
             alt: "Giant sunflowers and hydrangeas bursting open as vines crush The Eraser's vacuum",
             width: 1376,
             height: 768,
+            pan: "down",
             caption:
               "Giant, bright yellow sunflowers and huge, puffy blue hydrangeas actively burst and sprouted from where the water splashed. The thick green vines tangled right around The Eraser's vacuum. With a large “POP!”, the clunky vacuum broke, and a puff of smoke burst from its top.",
           },
@@ -234,6 +255,7 @@ const STORY = [
             alt: "Aqua Artist and Snowy diving into the restored, swirling paint river",
             width: 1376,
             height: 768,
+            pan: "left",
             caption:
               "The Eraser grumbled from the shadows and ran away into the grayness, while a beautiful, swirling paint river filled the terrain again. Aqua Artist Nora and Snowy dove in, making a colorful splash. Suddenly, the warm morning sun woke her up.",
           },
@@ -280,7 +302,7 @@ const STORY = [
           {
             src: "images/p8-1.webp",
             alt: "Nora in her art-filled bedroom, surrounded by her drawings",
-            width: 1376,
+            width: 1408,
             height: 768,
             caption:
               "Nora had saved the day, and now she was bringing the magic to life with her art, exactly as she wanted to do as a future art teacher. She realized that even when she wasn't a superhero, she could still use her creativity to make the world a more colorful, wonderful place.",
