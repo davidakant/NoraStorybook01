@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --bg-deep: #181030;
+  --bg-deep: #ff6fb0;
   --bg-deep-2: #241a44;
   --ink: #2a2140;
   --cream: #fdf6e8;
@@ -47,8 +47,8 @@ body {
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 20% 10%, #2c2154 0%, transparent 55%),
-    radial-gradient(circle at 85% 90%, #1d3b52 0%, transparent 50%),
+    radial-gradient(circle at 20% 10%, #ffa8d4 0%, transparent 55%),
+    radial-gradient(circle at 85% 90%, #e0468f 0%, transparent 50%),
     var(--bg-deep);
   overflow: hidden;
 }
@@ -86,8 +86,8 @@ body {
   font-size: clamp(15px, 3.6vw, 19px);
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--gold);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
 }
 
 #track {
@@ -176,6 +176,10 @@ body {
   user-select: none;
   -webkit-user-drag: none;
 }
+
+/* Page 1 panel 1 (swim meet): user-driven pan/zoom, see app.js. */
+.media-frame--interactive { cursor: grab; }
+.media-frame--interactive.is-grabbing { cursor: grabbing; }
 
 /* Slow Ken Burns-style pan. object-fit: cover crops the image down to
    exactly the frame's size first - that crop is final, so the pan transform
@@ -340,7 +344,7 @@ body {
 }
 
 #pageIndicator .dot.active {
-  background: var(--pink);
+  background: #fff;
   transform: scale(1.25);
 }
 

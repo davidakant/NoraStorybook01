@@ -227,9 +227,184 @@
     horizontalIntent = null;
   });
 
+  // Page 1 panel 1 (swim meet) is interactive: pan with mouse drag or a
+  // finger, zoom with the scroll wheel or a two-finger pinch. Movement is
+  // clamped so the image can never reveal anything beyond its own cropped
+  // edges. Releasing hands control back to the default looping pan
+  // animation, easing back to wherever that animation was paused so the
+  // handoff is seamless (the animation never actually stops - it's just
+  // hidden behind an !important inline transform while the user drives it).
+  function makePanZoomInteractive(frame) {
+    const img = frame.querySelector(".media");
+    if (!img) return;
+
+    const MIN_SCALE = 1;
+    const MAX_SCALE = 4;
+    const pointers = new Map();
+
+    let active = false;
+    let scale = 1, tx = 0, ty = 0;
+    let grabScale = 1, grabTx = 0, grabTy = 0;
+    let pinchStartDist = 0;
+    let pinchStartScale = 1;
+    let lastMid = null;
+    let settleTimer = null;
+    let wheelEndTimer = null;
+
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+    function clampPosition() {
+      const maxX = ((scale - 1) / 2) * frame.clientWidth;
+      const maxY = ((scale - 1) / 2) * frame.clientHeight;
+      tx = clamp(tx, -maxX, maxX);
+      ty = clamp(ty, -maxY, maxY);
+    }
+
+    function applyTransform() {
+      img.style.setProperty("transform", `translate(${tx}px, ${ty}px) scale(${scale})`, "important");
+    }
+
+    function beginInteraction() {
+      frame.classList.add("is-grabbing");
+      if (active) return;
+      active = true;
+      if (settleTimer) {
+        clearTimeout(settleTimer);
+        settleTimer = null;
+      }
+      img.style.transition = "none";
+      img.style.animationPlayState = "paused";
+
+      // Read the animation's current mid-flight transform so grabbing the
+      // image never causes a jump - the user takes over from exactly where
+      // the autoplay pan visually was.
+      const computed = getComputedStyle(img).transform;
+      const m = new DOMMatrix(computed === "none" ? undefined : computed);
+      scale = clamp(m.a, MIN_SCALE, MAX_SCALE);
+      tx = m.e;
+      ty = m.f;
+      clampPosition();
+      grabScale = scale;
+      grabTx = tx;
+      grabTy = ty;
+      applyTransform();
+    }
+
+    function endInteraction() {
+      frame.classList.remove("is-grabbing");
+      if (!active) return;
+      active = false;
+
+      img.style.transition = "transform 320ms ease";
+      scale = grabScale;
+      tx = grabTx;
+      ty = grabTy;
+      applyTransform();
+
+      settleTimer = setTimeout(() => {
+        img.style.transition = "";
+        img.style.animationPlayState = "";
+        img.style.removeProperty("transform");
+        settleTimer = null;
+      }, 340);
+    }
+
+    function onPointerDown(e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      frame.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      beginInteraction();
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        pinchStartDist = dist(a, b);
+        pinchStartScale = scale;
+        lastMid = mid(a, b);
+      }
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function onPointerMove(e) {
+      if (!pointers.has(e.pointerId)) return;
+      const prev = pointers.get(e.pointerId);
+      const cur = { x: e.clientX, y: e.clientY };
+      pointers.set(e.pointerId, cur);
+
+      if (pointers.size === 1) {
+        tx += cur.x - prev.x;
+        ty += cur.y - prev.y;
+      } else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const d = dist(a, b);
+        if (pinchStartDist > 0) {
+          scale = clamp(pinchStartScale * (d / pinchStartDist), MIN_SCALE, MAX_SCALE);
+        }
+        const m = mid(a, b);
+        if (lastMid) {
+          tx += m.x - lastMid.x;
+          ty += m.y - lastMid.y;
+        }
+        lastMid = m;
+      }
+      clampPosition();
+      applyTransform();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function onPointerEnd(e) {
+      pointers.delete(e.pointerId);
+      try {
+        frame.releasePointerCapture(e.pointerId);
+      } catch {}
+
+      // Reset pinch tracking whether a gesture just ended outright or just
+      // dropped from two fingers to one - either way the next move event
+      // should re-baseline rather than reuse stale pinch deltas.
+      pinchStartDist = 0;
+      lastMid = null;
+      if (pointers.size === 0) endInteraction();
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function onWheel(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      beginInteraction();
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      scale = clamp(scale * factor, MIN_SCALE, MAX_SCALE);
+      clampPosition();
+      applyTransform();
+
+      if (wheelEndTimer) clearTimeout(wheelEndTimer);
+      wheelEndTimer = setTimeout(() => {
+        if (pointers.size === 0) endInteraction();
+        wheelEndTimer = null;
+      }, 450);
+    }
+
+    frame.classList.add("media-frame--interactive");
+    frame.addEventListener("pointerdown", onPointerDown);
+    frame.addEventListener("pointermove", onPointerMove);
+    frame.addEventListener("pointerup", onPointerEnd);
+    frame.addEventListener("pointercancel", onPointerEnd);
+    frame.addEventListener("wheel", onWheel, { passive: false });
+    // Pointer events alone don't stop the legacy touch events that the
+    // page-swipe handler above listens for on `track` - stop them here so a
+    // finger on this image pans the photo instead of turning the page.
+    frame.addEventListener("touchstart", (e) => e.stopPropagation());
+    frame.addEventListener("touchmove", (e) => e.stopPropagation());
+  }
+
   STORY.forEach((pageData, i) => rail.appendChild(buildPage(pageData, i)));
   track.appendChild(rail);
   buildIndicator();
   setTransform(false);
   updateChrome();
+
+  const swimMeetFrame = track.querySelector('.media-frame[data-page="1"][data-row="1"][data-slot="a"]');
+  if (swimMeetFrame) makePanZoomInteractive(swimMeetFrame);
 })();

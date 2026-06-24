@@ -43,7 +43,7 @@ const STORY = [
             pan: "up",
             objectPosition: "50% 18%",
             caption:
-              "Nora, with her wide blue eyes and a determined grin, was not just any 4th grader; she was a champion competitive swimmer.",
+              "Nora, with her big blue eyes and a determined smile, was not just any fourth grader. She was a champion competitive swimmer.",
           },
           {
             src: "images/p1-1b.webp",
@@ -52,7 +52,7 @@ const STORY = [
             height: 1536,
             pan: "right",
             caption:
-              "After a big win at a swim meet, she enjoyed a huge bowl of her favorite food: creamy macaroni and cheese. Her loyal sidekick, Snowy the Bichon Frise, sat patiently by her feet.",
+              "After a big swim meet win, she enjoyed a huge bowl of her favorite creamy macaroni and cheese. Her loyal puppy, Snowy the Bichon, sat patiently by her feet.",
           },
         ],
       },
