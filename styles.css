@@ -1,0 +1,366 @@
+:root {
+  color-scheme: dark;
+  --bg-deep: #181030;
+  --bg-deep-2: #241a44;
+  --ink: #2a2140;
+  --cream: #fdf6e8;
+  --pink: #ff6fb0;
+  --pink-deep: #e0468f;
+  --gold: #ffd166;
+  --teal: #4fd6c4;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --ipad-ratio: 0.75; /* width / height, classic iPad portrait (3:4) */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg-deep);
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 10%, #2c2154 0%, transparent 55%),
+    radial-gradient(circle at 85% 90%, #1d3b52 0%, transparent 50%),
+    var(--bg-deep);
+  overflow: hidden;
+}
+
+/* Mouse/trackpad browsers (e.g. testing in desktop Chrome) preview the
+   storybook inside a centered, iPad-portrait-shaped frame. Real touch
+   devices (an actual iPad in Safari) skip this and stay full-bleed. */
+@media (hover: hover) and (pointer: fine) {
+  #stage {
+    background: #0b0a12;
+  }
+
+  #app {
+    width: min(96vw, 96dvh * var(--ipad-ratio));
+    height: min(96dvh, 96vw / var(--ipad-ratio));
+    border-radius: 38px;
+    border: 10px solid #1d1b24;
+    box-shadow:
+      0 30px 70px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+}
+
+#bookHeader {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(6px + var(--safe-t)) 16px 5px;
+  text-align: center;
+}
+
+#storyTitle {
+  margin: 0;
+  font-size: clamp(15px, 3.6vw, 19px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--gold);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+}
+
+#track {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pages-rail {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  will-change: transform;
+  transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.page {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 2px 12px 4px;
+  overflow: hidden;
+}
+
+/* Hard rule: every page has exactly 2 rows (one per paragraph), stacked one
+   over the other, each sharing the page's height equally. A row is normally
+   one full-width panel; row--split holds two panels side by side (an A/B
+   image pair) instead. */
+.page-rows {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+}
+
+.row--split {
+  gap: 8px;
+}
+
+.panel {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 4px;
+}
+
+/* No caption sibling to share with - the frame alone fills the panel. */
+.panel--no-caption {
+  gap: 0;
+}
+
+.media-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 36px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--bg-deep-2);
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 2px rgba(20, 10, 40, 0.55),
+    0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.media-frame .media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Slow Ken Burns-style pan. object-fit: cover crops the image down to
+   exactly the frame's size first - that crop is final, so the pan transform
+   below can only slide/zoom within whatever it kept. --pan-scale (override
+   per image, default 1.3) zooms that already-cropped result so there's
+   somewhere to slide; --pan-travel is the safe distance available purely
+   from that zoom (independent of frame/image ratio, since cover always
+   crops to exactly fill the frame regardless of either). If the content you
+   need (e.g. text near an edge) gets cropped away before the pan even
+   starts, fix that with a per-image `objectPosition` override (e.g. "50%
+   0%" to anchor cover's crop to the top) - panning alone can't recover
+   content cover already discarded. Duration/delay are staggered per image
+   so multiple pans don't move in lockstep. Skipped for users who've asked
+   their OS for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .media[data-pan] {
+    --pan-scale: 1.3;
+    --pan-travel: calc((var(--pan-scale) - 1) / 2 * 80%);
+    animation-duration: 16s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+
+  .media[data-pan="down"] { animation-name: pan-down; }
+  .media[data-pan="up"] { animation-name: pan-up; }
+  .media[data-pan="left"] { animation-name: pan-left; }
+  .media[data-pan="right"] { animation-name: pan-right; }
+
+  @keyframes pan-down {
+    from { transform: scale(var(--pan-scale)) translateY(var(--pan-travel)); }
+    to { transform: scale(var(--pan-scale)) translateY(calc(var(--pan-travel) * -1)); }
+  }
+  @keyframes pan-up {
+    from { transform: scale(var(--pan-scale)) translateY(calc(var(--pan-travel) * -1)); }
+    to { transform: scale(var(--pan-scale)) translateY(var(--pan-travel)); }
+  }
+  @keyframes pan-left {
+    from { transform: scale(var(--pan-scale)) translateX(calc(var(--pan-travel) * -1)); }
+    to { transform: scale(var(--pan-scale)) translateX(var(--pan-travel)); }
+  }
+  @keyframes pan-right {
+    from { transform: scale(var(--pan-scale)) translateX(var(--pan-travel)); }
+    to { transform: scale(var(--pan-scale)) translateX(calc(var(--pan-travel) * -1)); }
+  }
+
+  /* Slow zoom anchored to a corner instead of sliding. Scaling from a
+     corner keeps that corner's two edges flush with the frame at any zoom
+     level (the opposite corner grows further outside it instead) - unlike
+     panning, this is always gap-safe regardless of scale, so no measuring
+     or per-image tuning is needed. */
+  .media[data-zoom] {
+    --zoom-scale: 1.3;
+    animation-name: zoom-in;
+    animation-duration: 16s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+  }
+
+  .media[data-zoom="top-left"] { transform-origin: 0% 0%; }
+  .media[data-zoom="top-right"] { transform-origin: 100% 0%; }
+  .media[data-zoom="bottom-left"] { transform-origin: 0% 100%; }
+  .media[data-zoom="bottom-right"] { transform-origin: 100% 100%; }
+  .media[data-zoom="center"] { transform-origin: 50% 50%; }
+
+  @keyframes zoom-in {
+    from { transform: scale(1); }
+    to { transform: scale(var(--zoom-scale)); }
+  }
+}
+
+/* Art not ready yet for this slot - dashed placeholder instead of an img. */
+.media-frame--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.media-frame__placeholder {
+  font-size: clamp(13px, 2vh, 17px);
+  color: rgba(253, 246, 232, 0.55);
+  text-align: center;
+  padding: 0 12px;
+}
+
+/* No max-height cap and no scrolling, ever - the caption always takes
+   exactly the height its text needs, and the frame (flex: 1 1 auto,
+   min-height: 36px above) absorbs whatever's left. If a caption is long,
+   the image shrinks to make room rather than the text scrolling or
+   clipping. */
+.panel-caption {
+  flex: 0 0 auto;
+  margin: 0;
+  background: rgba(253, 246, 232, 0.96);
+  color: var(--ink);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.panel-caption-inner {
+  padding: 4px 9px;
+  font-size: clamp(20px, 4.4vh, 30px);
+  line-height: 1.2;
+}
+
+.panel-caption-inner p { margin: 0 0 0.5em; }
+.panel-caption-inner p:last-child { margin-bottom: 0; }
+
+.nav-arrow {
+  position: absolute;
+  top: 54%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 14, 40, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, background 0.2s;
+  z-index: 5;
+}
+
+.nav-arrow svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: var(--cream);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-arrow:active { transform: translateY(-50%) scale(0.9); }
+.nav-arrow:disabled { opacity: 0.18; pointer-events: none; }
+
+.nav-arrow--left { left: calc(10px + var(--safe-l)); }
+.nav-arrow--right { right: calc(10px + var(--safe-r)); }
+
+#pageIndicator {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0 calc(6px + var(--safe-b));
+}
+
+#pageIndicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background 0.2s, transform 0.2s;
+}
+
+#pageIndicator .dot.active {
+  background: var(--pink);
+  transform: scale(1.25);
+}
+
+#rotateOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-deep);
+  color: var(--cream);
+  text-align: center;
+  padding: 24px;
+}
+
+.rotate-card { max-width: 320px; }
+.rotate-icon { font-size: 48px; margin-bottom: 12px; }
+.rotate-card p { font-size: 18px; line-height: 1.4; }
+
+@media (orientation: landscape) and (max-device-width: 1400px) {
+  #rotateOverlay { display: flex; }
+}

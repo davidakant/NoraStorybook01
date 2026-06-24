@@ -1,0 +1,162 @@
+[
+  {
+    "file": "p1-1a.webp",
+    "width": 1790,
+    "height": 2400,
+    "ratio": 0.746,
+    "inBytes": 7103299,
+    "outBytes": 229982
+  },
+  {
+    "file": "p1-1b.webp",
+    "width": 2750,
+    "height": 1536,
+    "ratio": 1.79,
+    "inBytes": 14337282,
+    "outBytes": 176816
+  },
+  {
+    "file": "p1-2.webp",
+    "width": 2752,
+    "height": 1536,
+    "ratio": 1.792,
+    "inBytes": 6416751,
+    "outBytes": 143886
+  },
+  {
+    "file": "p2-1.webp",
+    "width": 2752,
+    "height": 1536,
+    "ratio": 1.792,
+    "inBytes": 11203108,
+    "outBytes": 1321722
+  },
+  {
+    "file": "p2-2.webp",
+    "width": 2752,
+    "height": 1536,
+    "ratio": 1.792,
+    "inBytes": 9752210,
+    "outBytes": 882232
+  },
+  {
+    "file": "p3-1.webp",
+    "width": 1407,
+    "height": 768,
+    "ratio": 1.832,
+    "inBytes": 2134820,
+    "outBytes": 129282
+  },
+  {
+    "file": "p3-2.webp",
+    "width": 2752,
+    "height": 1536,
+    "ratio": 1.792,
+    "inBytes": 7521778,
+    "outBytes": 316012
+  },
+  {
+    "file": "p4-1a.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2904455,
+    "outBytes": 374782
+  },
+  {
+    "file": "p4-1b.webp",
+    "width": 2752,
+    "height": 1536,
+    "ratio": 1.792,
+    "inBytes": 9744412,
+    "outBytes": 845998
+  },
+  {
+    "file": "p4-2a.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2683501,
+    "outBytes": 303696
+  },
+  {
+    "file": "p5-1.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2450304,
+    "outBytes": 211344
+  },
+  {
+    "file": "p5-2.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2310620,
+    "outBytes": 195852
+  },
+  {
+    "file": "p6-1.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2372274,
+    "outBytes": 173242
+  },
+  {
+    "file": "p6-2.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2831466,
+    "outBytes": 362514
+  },
+  {
+    "file": "p7-1.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2073108,
+    "outBytes": 82478
+  },
+  {
+    "file": "p7-2.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2149037,
+    "outBytes": 138268
+  },
+  {
+    "file": "p8-1.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 912268,
+    "outBytes": 214884
+  },
+  {
+    "file": "p8-2.webp",
+    "width": 1376,
+    "height": 768,
+    "ratio": 1.792,
+    "inBytes": 2590837,
+    "outBytes": 252136
+  },
+  {
+    "file": "p3-1a.webp",
+    "width": 1536,
+    "height": 2752,
+    "ratio": 0.558,
+    "inBytes": 7612989,
+    "outBytes": 358458
+  },
+  {
+    "file": "p3-1b.webp",
+    "width": 1407,
+    "height": 768,
+    "ratio": 1.832,
+    "inBytes": 2134820,
+    "outBytes": 129282
+  }
+]
