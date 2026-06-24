@@ -137,6 +137,100 @@ body {
   box-shadow: none;
 }
 
+/* Jigsaw puzzle (the end-page bookend), ported from the "Puzzles" project -
+   see puzzle.js. A dark backdrop frames the play area distinctly from the
+   app's pink chrome and gives the piece shadows/outlines real contrast. */
+.puzzle {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.puzzle-board-wrap {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* Always-visible, desaturated full image behind the pieces - a guide for
+   roughly where things go. Sized via object-fit: contain against the same
+   box computeGeometry() fits the board into (with no inset - see the
+   comment there), so it lands exactly where the solved board scales up to. */
+.puzzle-bg-guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: saturate(15%) brightness(50%);
+}
+
+/* Faint outline of where the solved puzzle belongs, sized smaller than the
+   board-wrap (see BOARD_SHRINK in puzzle.js) so there's a margin all around
+   for scattered, unsolved pieces to live in. */
+.puzzle-board-target {
+  position: absolute;
+  z-index: 0;
+  outline: 3px solid #ff0000;
+  background: rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+}
+
+/* hue-rotate cycles the solid red outline through the full spectrum - a
+   continuous, smooth rainbow rather than manually-listed color stops.
+   White-ish background fill is unaffected (no hue to rotate). Skipped for
+   users who've asked their OS for less motion - a fixed vivid red instead. */
+@media (prefers-reduced-motion: no-preference) {
+  .puzzle-board-target {
+    animation: puzzle-rainbow 7s linear infinite;
+  }
+  @keyframes puzzle-rainbow {
+    from { filter: hue-rotate(0deg); }
+    to { filter: hue-rotate(360deg); }
+  }
+}
+
+.puzzle-piece {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease; /* only animates the tap-to-rotate snap */
+}
+.puzzle-piece.dragging { cursor: grabbing; }
+.puzzle-piece.locked { cursor: default; }
+
+.puzzle-controls {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px calc(14px + var(--safe-b));
+  background: rgba(10, 8, 20, 0.4);
+}
+
+.puzzle-btn {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 10px 22px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.puzzle-btn:active { opacity: 0.7; }
+.puzzle-btn:disabled { opacity: 0.35; cursor: default; }
+.puzzle-btn.active { background: var(--pink); border-color: transparent; }
+
 /* Hard rule: every page has exactly 2 rows (one per paragraph), stacked one
    over the other, each sharing the page's height equally. A row is normally
    one full-width panel; row--split holds two panels side by side (an A/B
@@ -203,6 +297,17 @@ body {
    the browser's own touch scroll/pinch-zoom from racing the JS handlers. */
 .media-frame--interactive { cursor: grab; touch-action: none; }
 .media-frame--interactive.is-grabbing { cursor: grabbing; }
+
+/* Rub/scratch-to-reveal overlay (see reveal.js) - sits on top of the .media
+   img via DOM order alone, no z-index needed. */
+.reveal-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
 
 /* Slow Ken Burns-style pan. object-fit: cover crops the image down to
    exactly the frame's size first - that crop is final, so the pan transform

@@ -29,6 +29,13 @@
 // zoom level). `pan` and `zoom` are mutually exclusive per image. Optional
 // `zoomScale` (default 1.3) overrides how far in it zooms.
 //
+// Optional per-image `reveal: true` covers the image with a blurred,
+// labeled "scratch card" layer (see reveal.js) that the player rubs away
+// with a finger or the mouse; once ~90% of it is cleared, the rest fades
+// out on its own. Optional `revealLabel` overrides the default printed
+// label, and `revealThreshold` (0-1, default 0.9) overrides how much must
+// be cleared before it auto-finishes.
+//
 // COVER_PAGE and END_PAGE are bookends, not part of the numbered story (the
 // header's "Page X of 8" and the page-indicator dots both only count
 // STORY). Each is a single image filling the entire screen edge to edge -
@@ -42,6 +49,10 @@ const COVER_PAGE = {
 };
 const END_PAGE = {
   kind: "bookend",
+  // `puzzle` turns this bookend into a jigsaw of `src` instead of a plain
+  // image (see app.js's buildPuzzlePage / puzzle.js). cols/rows must evenly
+  // divide the image's pixel dimensions for clean, equal-sized pieces.
+  puzzle: { cols: 4, rows: 6 },
   src: "images/the-end.webp",
   alt: "The End - Nora and Snowy waving goodbye among sunflowers and a starry painted sky",
   width: 896,
@@ -120,7 +131,7 @@ const STORY = [
             pan: "right",
             panScale: 1.1,
             caption:
-              "Down below, beautiful painted rivers, which were normally full of color and movement, were starting to recede and disappear. They revealed a dusty, cracked terrain, as if they were turning into an empty canvas.",
+              "Down below, beautiful painted rivers, which should be full of color and movement, were beginning to dry up and disappear. Underneath, the dusty, cracked ground was turning into an empty canvas.",
           },
         ],
       },
@@ -157,7 +168,7 @@ const STORY = [
             width: 2752,
             height: 1536,
             caption:
-              "The vacuum was sucking up all the swirling, beautiful paint-water, making a distinct dusty effect. “I hate swimming, and I hate wet paint!” he grumbled. “I am going to turn this world into a boring, dry gray canvas!”",
+              "The vacuum was sucking up all the swirling, beautiful colors, and spewing out clouds of gray dust. “I hate swimming, and I hate wet paint!” he grumbled. “I am going to turn this world into a boring, dry gray canvas!”",
           },
         ],
       },
@@ -183,6 +194,7 @@ const STORY = [
             width: 2752,
             height: 1536,
             zoom: "center",
+            reveal: true,
           },
         ],
       },
@@ -194,7 +206,7 @@ const STORY = [
             width: 1376,
             height: 768,
             caption:
-              "She wore a sleek, glowing, iridescent pink superhero swimsuit and a flowing pink cape with a shimmering palette symbol. She soared through the swirling paint sky, performing a powerful butterfly stroke. “You can’t erase art or water!” she cheered.",
+              "She wore a shimmering pink superhero suit and a flowing pink cape with a palette symbol. She soared through the swirling painted sky using her powerful butterfly stroke. “You can’t erase art or color!” she cheered.",
           },
         ],
       },
@@ -213,7 +225,7 @@ const STORY = [
             height: 768,
             pan: "down",
             caption:
-              "Aqua Artist Nora landed perfectly on a large grand piano that was magically floating in the paint sky. She played a quick, joyful melody. From the piano, a cascade of sparkling energy notes physically morphed into tangible, fresh water drops that cascaded downwards.",
+              "Aqua Artist Nora landed perfectly on a large grand piano magically floating in the painted sky. She played a quick, joyful melody. Out of the piano, a cascade of sparkling energy notes fell like a waterfall of fresh paint drops to the dry, cracked ground below.",
           },
         ],
       },
@@ -225,7 +237,7 @@ const STORY = [
             width: 1376,
             height: 768,
             caption:
-              "Snowy dug fast on the terrain, and where the water drops pooled, small, sparkling blue splashes erupted. Green vines with leaves rapidly unfurled, spreading over the gray ground.",
+              "Snowy dug fast at the ground. The paint drops splashed and exploded into sparkling blue puddles. Thick vines with large green leaves grew quickly, spreading out over the gray ground.",
           },
         ],
       },
@@ -244,7 +256,7 @@ const STORY = [
             height: 768,
             pan: "down",
             caption:
-              "Giant, bright yellow sunflowers and huge, puffy blue hydrangeas actively burst and sprouted from where the water splashed. The thick green vines tangled right around The Eraser's vacuum. With a large “POP!”, the clunky vacuum broke, and a puff of smoke burst from its top.",
+              "Giant, bright yellow sunflowers and huge, puffy blue hydrangeas burst and sprouted from the vines and tangled around The Eraser's vacuum. With a large “POP!”, the clunky vacuum broke, and a puff of smoke burst from its top.",
           },
         ],
       },
@@ -257,7 +269,7 @@ const STORY = [
             height: 768,
             pan: "left",
             caption:
-              "The Eraser grumbled from the shadows and ran away into the grayness, while a beautiful, swirling paint river filled the terrain again. Aqua Artist Nora and Snowy dove in, making a colorful splash. Suddenly, the warm morning sun woke her up.",
+              "The Eraser grumbled from the shadows and ran away into the grayness, while a beautiful, swirling paint river filled the landscape once again. Aqua Artist Nora and Snowy dove in, making a colorful splash. Suddenly, the warm morning sun woke Nora up from her dream.",
           },
         ],
       },

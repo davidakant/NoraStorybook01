@@ -18,6 +18,7 @@
   let dragOffset = 0;
   let dragging = false;
   let motionCount = 0;
+  const puzzlesByRailIndex = new Map();
 
   function renderCaption(text) {
     return text
@@ -58,6 +59,9 @@
         if (img.zoomScale) image.style.setProperty("--zoom-scale", img.zoomScale);
       }
       frame.appendChild(image);
+      if (img.reveal) {
+        createRubReveal(frame, { src: img.src, label: img.revealLabel, threshold: img.revealThreshold });
+      }
     } else {
       frame.classList.add("media-frame--empty");
       const label = document.createElement("span");
@@ -106,6 +110,20 @@
     if (pageData.kind === "bookend") {
       page.className = "page page--bookend";
       page.setAttribute("aria-label", pageData.alt);
+
+      if (pageData.puzzle) {
+        const puzzleEl = document.createElement("div");
+        page.appendChild(puzzleEl);
+        const handle = createJigsawPuzzle(puzzleEl, {
+          src: pageData.src,
+          alt: pageData.alt,
+          cols: pageData.puzzle.cols,
+          rows: pageData.puzzle.rows,
+        });
+        puzzlesByRailIndex.set(pageIndex, handle);
+        return page;
+      }
+
       const frame = buildFrame(pageData, "cover", 1, "single", pageIndex === 0);
       frame.classList.add("media-frame--bookend");
       page.appendChild(frame);
@@ -151,6 +169,10 @@
     const isBookend = data.kind === "bookend";
     app.classList.toggle("app--bookend", isBookend);
     if (!isBookend) storyTitle.textContent = `Page ${data.page} of ${STORY.length} · ${data.title}`;
+
+    // Only the puzzle on the currently-visible page runs its render loop.
+    puzzlesByRailIndex.forEach((handle, railIndex) => handle.setActive(railIndex === current));
+
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === TOTAL - 1;
     updateIndicator();
@@ -448,4 +470,6 @@
   track.querySelectorAll(".media-frame").forEach((frame) => {
     if (frame.querySelector(".media")) makePanZoomInteractive(frame);
   });
+
+  window.__puzzles = puzzlesByRailIndex; // debug hook, see puzzle.js's __debug* methods
 })();
