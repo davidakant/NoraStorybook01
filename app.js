@@ -227,13 +227,14 @@
     horizontalIntent = null;
   });
 
-  // Page 1 panel 1 (swim meet) is interactive: pan with mouse drag or a
-  // finger, zoom with the scroll wheel or a two-finger pinch. Movement is
-  // clamped so the image can never reveal anything beyond its own cropped
-  // edges. Releasing hands control back to the default looping pan
-  // animation, easing back to wherever that animation was paused so the
-  // handoff is seamless (the animation never actually stops - it's just
-  // hidden behind an !important inline transform while the user drives it).
+  // Every image is interactive: pan with mouse drag or a finger, zoom with
+  // the scroll wheel or a two-finger pinch. Movement is clamped so the
+  // image can never reveal anything beyond its own cropped edges. Releasing
+  // hands control back to the default looping pan/zoom animation (or to the
+  // static rest position, for images with neither), easing back to wherever
+  // that animation was paused so the handoff is seamless (the animation
+  // never actually stops - it's just hidden behind an !important inline
+  // transform while the user drives it).
   function makePanZoomInteractive(frame) {
     const img = frame.querySelector(".media");
     if (!img) return;
@@ -241,6 +242,20 @@
     const MIN_SCALE = 1;
     const MAX_SCALE = 4;
     const pointers = new Map();
+
+    // Corner-anchored zoom images scale from a corner, not the center, so
+    // the safe pan range is asymmetric: the two edges touching the anchor
+    // have zero slack (it's already flush with the frame, see styles.css)
+    // while the opposite edges carry the full overflow. Pan/static images
+    // use the default center origin, where the range is symmetric.
+    const ORIGIN_BY_ZOOM = {
+      "top-left": [0, 0],
+      "top-right": [1, 0],
+      "bottom-left": [0, 1],
+      "bottom-right": [1, 1],
+      center: [0.5, 0.5],
+    };
+    const [originX, originY] = ORIGIN_BY_ZOOM[img.dataset.zoom] || [0.5, 0.5];
 
     let active = false;
     let scale = 1, tx = 0, ty = 0;
@@ -256,10 +271,14 @@
     const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
     function clampPosition() {
-      const maxX = ((scale - 1) / 2) * frame.clientWidth;
-      const maxY = ((scale - 1) / 2) * frame.clientHeight;
-      tx = clamp(tx, -maxX, maxX);
-      ty = clamp(ty, -maxY, maxY);
+      const fw = frame.clientWidth;
+      const fh = frame.clientHeight;
+      const leftEdge = originX * fw * (1 - scale);
+      const topEdge = originY * fh * (1 - scale);
+      const rightEdge = leftEdge + fw * scale;
+      const bottomEdge = topEdge + fh * scale;
+      tx = clamp(tx, fw - rightEdge, -leftEdge);
+      ty = clamp(ty, fh - bottomEdge, -topEdge);
     }
 
     function applyTransform() {
@@ -313,7 +332,9 @@
 
     function onPointerDown(e) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      frame.setPointerCapture(e.pointerId);
+      try {
+        frame.setPointerCapture(e.pointerId);
+      } catch {}
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       beginInteraction();
       if (pointers.size === 2) {
@@ -405,6 +426,7 @@
   setTransform(false);
   updateChrome();
 
-  const swimMeetFrame = track.querySelector('.media-frame[data-page="1"][data-row="1"][data-slot="a"]');
-  if (swimMeetFrame) makePanZoomInteractive(swimMeetFrame);
+  track.querySelectorAll(".media-frame").forEach((frame) => {
+    if (frame.querySelector(".media")) makePanZoomInteractive(frame);
+  });
 })();

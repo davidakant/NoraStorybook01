@@ -177,8 +177,9 @@ body {
   -webkit-user-drag: none;
 }
 
-/* Page 1 panel 1 (swim meet): user-driven pan/zoom, see app.js. */
-.media-frame--interactive { cursor: grab; }
+/* Every image: user-driven pan/zoom, see app.js. touch-action: none stops
+   the browser's own touch scroll/pinch-zoom from racing the JS handlers. */
+.media-frame--interactive { cursor: grab; touch-action: none; }
 .media-frame--interactive.is-grabbing { cursor: grabbing; }
 
 /* Slow Ken Burns-style pan. object-fit: cover crops the image down to
