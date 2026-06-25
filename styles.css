@@ -313,19 +313,26 @@ body {
    exactly the frame's size first - that crop is final, so the pan transform
    below can only slide/zoom within whatever it kept. --pan-scale (override
    per image, default 1.3) zooms that already-cropped result so there's
-   somewhere to slide; --pan-travel is the safe distance available purely
-   from that zoom (independent of frame/image ratio, since cover always
-   crops to exactly fill the frame regardless of either). If the content you
-   need (e.g. text near an edge) gets cropped away before the pan even
-   starts, fix that with a per-image `objectPosition` override (e.g. "50%
-   0%" to anchor cover's crop to the top) - panning alone can't recover
-   content cover already discarded. Duration/delay are staggered per image
-   so multiple pans don't move in lockstep. Skipped for users who've asked
-   their OS for less motion. */
+   somewhere to slide; --pan-travel is the FULL safe distance available
+   purely from that zoom (independent of frame/image ratio, since cover
+   always crops to exactly fill the frame regardless of either), so at the
+   travel extremes the image's true edge lands exactly flush with the
+   frame's edge - the pan always reaches as far as it possibly can without
+   opening a gap. Note the /(2*scale) rather than /2: translateY() is the
+   innermost function here, so its percentage (resolved against the
+   pre-scale box) gets multiplied by --pan-scale too once the outer scale()
+   composes with it - dividing by scale up front cancels that out, instead
+   of overshooting the safe margin and opening a gap at the extremes. If the
+   content you need (e.g. text near an edge) gets cropped away before the
+   pan even starts, fix that with a per-image `objectPosition` override
+   (e.g. "50% 0%" to anchor cover's crop to the top) - panning alone can't
+   recover content cover already discarded. Duration/delay are staggered
+   per image so multiple pans don't move in lockstep. Skipped for users
+   who've asked their OS for less motion. */
 @media (prefers-reduced-motion: no-preference) {
   .media[data-pan] {
     --pan-scale: 1.3;
-    --pan-travel: calc((var(--pan-scale) - 1) / 2 * 80%);
+    --pan-travel: calc((var(--pan-scale) - 1) / (2 * var(--pan-scale)) * 100%);
     animation-duration: 16s;
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;

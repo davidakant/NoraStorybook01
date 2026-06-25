@@ -8,7 +8,7 @@
 function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshold = 0.9 } = {}) {
   const BRUSH_MIN = 20; // css px
   const BRUSH_FRACTION = 0.06; // of min(frame width, height)
-  const BLUR_PX = 22;
+  const BLUR_DOWNSCALE = 42; // bigger = blurrier
   const ALPHA_GONE = 40; // a mask cell below this alpha counts as "erased"
   const MASK_SIZE = 48; // coverage-check resolution - cheap to read every frame
   const FADE_MS = 500;
@@ -56,9 +56,25 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
     const drawY = (ch - drawH) / 2;
 
     ctx.clearRect(0, 0, cw, ch);
-    ctx.filter = `blur(${BLUR_PX}px)`;
-    ctx.drawImage(img, drawX, drawY, drawW, drawH);
-    ctx.filter = "none";
+
+    // Canvas2D's `filter` property (e.g. ctx.filter = "blur(22px)") isn't
+    // reliably supported on every engine - notably, some WebKit/iPadOS
+    // versions silently ignore it, leaving the snapshot sharp instead of
+    // blurred. Drawing small and scaling back up only needs drawImage +
+    // smoothing, so the blur looks the same everywhere.
+    const smallW = Math.max(4, Math.round(cw / BLUR_DOWNSCALE));
+    const smallH = Math.max(4, Math.round(ch / BLUR_DOWNSCALE));
+    const smallCanvas = document.createElement("canvas");
+    smallCanvas.width = smallW;
+    smallCanvas.height = smallH;
+    const smallCtx = smallCanvas.getContext("2d");
+    smallCtx.imageSmoothingEnabled = true;
+    smallCtx.imageSmoothingQuality = "high";
+    smallCtx.drawImage(img, drawX * (smallW / cw), drawY * (smallH / ch), drawW * (smallW / cw), drawH * (smallH / ch));
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(smallCanvas, 0, 0, smallW, smallH, 0, 0, cw, ch);
 
     let fontSize = Math.max(16, Math.min(30, Math.round(Math.min(cw, ch) * 0.09)));
     ctx.font = `800 ${fontSize}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
