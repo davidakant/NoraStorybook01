@@ -46,6 +46,9 @@ const COVER_PAGE = {
   alt: "Book cover: Nora's Colorful World, A Tale of Creativity - Nora and Snowy in her art studio",
   width: 1792,
   height: 2400,
+  // Optional `watermark` text stamped big/bold/red over a bookend page (see
+  // .bookend-watermark in styles.css) - e.g. for marking a draft.
+  watermark: "DRAFT 1",
 };
 const END_PAGE = {
   kind: "bookend",

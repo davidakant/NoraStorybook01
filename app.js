@@ -19,6 +19,7 @@
   let dragging = false;
   let motionCount = 0;
   const puzzlesByRailIndex = new Map();
+  const watermarksToFit = [];
 
   function renderCaption(text) {
     return text
@@ -127,6 +128,17 @@
       const frame = buildFrame(pageData, "cover", 1, "single", pageIndex === 0);
       frame.classList.add("media-frame--bookend");
       page.appendChild(frame);
+
+      if (pageData.watermark) {
+        const watermark = document.createElement("div");
+        watermark.className = "bookend-watermark";
+        const watermarkText = document.createElement("span");
+        watermarkText.textContent = pageData.watermark;
+        watermark.appendChild(watermarkText);
+        page.appendChild(watermark);
+        watermarksToFit.push({ container: watermark, textEl: watermarkText });
+      }
+
       return page;
     }
 
@@ -461,11 +473,29 @@
     frame.addEventListener("touchmove", (e) => e.stopPropagation());
   }
 
+  // Shrinks a watermark's text (CSS's font-size is just a ceiling) only as
+  // much as needed to keep it from clipping past its page's edge - run
+  // after the rail is actually in the document, since it needs real layout.
+  function fitWatermark(container, textEl) {
+    textEl.style.fontSize = "";
+    const available = container.clientWidth - 48; // matches the 24px padding each side
+    const natural = textEl.scrollWidth;
+    if (available > 0 && natural > available) {
+      const naturalFontSize = parseFloat(getComputedStyle(textEl).fontSize);
+      textEl.style.fontSize = `${(naturalFontSize * available / natural) * 0.98}px`;
+    }
+  }
+
   PAGES.forEach((pageData, i) => rail.appendChild(buildPage(pageData, i)));
   track.appendChild(rail);
   buildIndicator();
   setTransform(false);
   updateChrome();
+
+  watermarksToFit.forEach(({ container, textEl }) => fitWatermark(container, textEl));
+  window.addEventListener("resize", () => {
+    watermarksToFit.forEach(({ container, textEl }) => fitWatermark(container, textEl));
+  });
 
   track.querySelectorAll(".media-frame").forEach((frame) => {
     if (frame.querySelector(".media")) makePanZoomInteractive(frame);

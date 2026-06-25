@@ -126,6 +126,7 @@ body {
 /* Cover/end pages: a single image filling the page edge to edge - no
    padding, no panel border/shadow/rounding. */
 .page--bookend {
+  position: relative;
   padding: 0;
 }
 
@@ -135,6 +136,38 @@ body {
   border: none;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Stamped over a bookend page (see `watermark` in data.js) - e.g. marking a
+   draft. pointer-events: none so it never blocks the page's pan/zoom or
+   puzzle interactivity underneath. The text's font-size below is a ceiling
+   only - app.js measures it against the page width after layout and
+   shrinks the inline font-size if needed, so it's always as large as
+   possible without ever clipping past the page edge. */
+.bookend-watermark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 66.667%;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.bookend-watermark span {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(100px, 35vw, 300px);
+  font-weight: 800;
+  color: #d40000;
+  opacity: 0.5;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 /* Jigsaw puzzle (the end-page bookend), ported from the "Puzzles" project -
