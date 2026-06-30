@@ -340,10 +340,10 @@ body {
    them, so they read as a control rather than covering the art. */
 .seq-arrow {
   position: absolute;
-  bottom: 10px;
+  bottom: 8px;
   z-index: 3;
-  width: 36px;
-  height: 36px;
+  width: 56px;
+  height: 56px;
   padding: 0;
   border: none;
   background: none;
@@ -472,8 +472,8 @@ body {
    on every side (left/right matching the existing top-or-bottom gap)
    instead of being centered at a fixed max-width - keeps the card as
    short as possible so more of the image stays visible. */
-.text-zone--card.text-zone--pos-bottom { left: 54px; right: 54px; bottom: 14px; }
-.text-zone--card.text-zone--pos-top { left: 14px; right: 14px; top: 14px; }
+.text-zone--card.text-zone--pos-bottom { left: 72px; right: 72px; bottom: 14px; }
+.text-zone--card.text-zone--pos-top { left: 72px; right: 72px; top: 14px; }
 .text-zone--card.text-zone--pos-left { left: 14px; top: 50%; transform: translateY(-50%); max-width: 58%; }
 .text-zone--card.text-zone--pos-right { right: 14px; top: 50%; transform: translateY(-50%); max-width: 58%; }
 .text-zone--card .text-zone__text {
