@@ -5,7 +5,13 @@
 // its own so the player always ends up seeing the full image. Wrapped as a
 // factory - createRubReveal(frame, opts) - so any image-pair on any
 // storybook page can use it, not just this one.
-function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshold = 0.9 } = {}) {
+//
+// Optional `locked: true` starts the snapshot blurred but with no printed
+// label and no scratch interaction - useful for gating a reveal behind
+// some other piece of page state (see `revealLocked` in data.js). Returns
+// a handle with `unlock()` to permanently lift that gate: scratching turns
+// on and the label is painted in.
+function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshold = 0.9, locked: initiallyLocked = false } = {}) {
   const BRUSH_MIN = 20; // css px
   const BRUSH_FRACTION = 0.06; // of min(frame width, height)
   const BLUR_DOWNSCALE = 42; // bigger = blurrier
@@ -31,6 +37,7 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
   let lastPoint = null;
   let coverageQueued = false;
   let finished = false;
+  let locked = initiallyLocked;
 
   function brushRadius() {
     return Math.max(BRUSH_MIN, Math.min(cw, ch) * BRUSH_FRACTION);
@@ -76,28 +83,37 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(smallCanvas, 0, 0, smallW, smallH, 0, 0, cw, ch);
 
-    let fontSize = Math.max(16, Math.min(30, Math.round(Math.min(cw, ch) * 0.09)));
-    ctx.font = `800 ${fontSize}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
-    while (fontSize > 12 && ctx.measureText(label).width > cw * 0.88) {
-      fontSize -= 1;
+    if (!locked) {
+      let fontSize = Math.max(16, Math.min(30, Math.round(Math.min(cw, ch) * 0.09)));
       ctx.font = `800 ${fontSize}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
+      while (fontSize > 12 && ctx.measureText(label).width > cw * 0.88) {
+        fontSize -= 1;
+        ctx.font = `800 ${fontSize}px ui-rounded, "SF Pro Rounded", system-ui, sans-serif`;
+      }
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = Math.max(3, fontSize * 0.18);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.strokeText(label, cw / 2, ch / 2);
+      ctx.fillStyle = "#000";
+      ctx.fillText(label, cw / 2, ch / 2);
     }
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.lineWidth = Math.max(3, fontSize * 0.18);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-    ctx.strokeText(label, cw / 2, ch / 2);
-    ctx.fillStyle = "#000";
-    ctx.fillText(label, cw / 2, ch / 2);
 
     maskCtx.globalCompositeOperation = "source-over";
     maskCtx.fillStyle = "#000";
     maskCtx.fillRect(0, 0, MASK_SIZE, MASK_SIZE);
   }
 
+  // canvas.getBoundingClientRect() reflects the real, on-screen rendered
+  // size, but the canvas's own drawing coordinate space (and cw/ch below)
+  // is always in fixed design pixels - the whole book now scales
+  // uniformly (see fitStage() in app.js), so dividing out that scale
+  // factor here keeps the brush exactly under the pointer at any zoom.
   function pointFromEvent(e) {
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const scaleX = rect.width / cw;
+    const scaleY = rect.height / ch;
+    return { x: (e.clientX - rect.left) / scaleX, y: (e.clientY - rect.top) / scaleY };
   }
 
   function eraseAt(x, y, r) {
@@ -157,7 +173,7 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
   }
 
   function onPointerDown(e) {
-    if (finished) return;
+    if (finished || locked) return;
     try {
       canvas.setPointerCapture(e.pointerId);
     } catch {}
@@ -201,4 +217,111 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
   const snapshotImage = new Image();
   snapshotImage.addEventListener("load", () => layoutAndPaint(snapshotImage));
   snapshotImage.src = src;
+
+  return {
+    unlock() {
+      if (!locked) return;
+      locked = false;
+      if (snapshotImage.complete) layoutAndPaint(snapshotImage);
+    },
+  };
+}
+
+// "Drag to reveal" mini-game: a fully desaturated clone of the image sits
+// over the real, full-color one (frame's own <img>) and is wiped away by a
+// vertical handle the reader drags left-to-right - same idea as the
+// rub-reveal above, but a single continuous drag instead of free-form
+// scratching. The desaturated layer is visible the moment this is called
+// (so a frame can start "loaded already grayscale"), independent of
+// whether the handle itself is shown - the caller controls the handle's
+// visibility/lifecycle separately (see `miniGameEl` in
+// buildSequentialZones), since it's typically gated to one beat while the
+// desaturation itself isn't. `onComplete` fires once, the first time the
+// reader drags far enough (`threshold`, 0-1, default 0.96).
+function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {}) {
+  const grayImg = document.createElement("img");
+  grayImg.className = "sat-reveal__gray";
+  grayImg.src = src;
+  grayImg.alt = "";
+  grayImg.draggable = false;
+  frame.appendChild(grayImg);
+
+  const handle = document.createElement("div");
+  handle.className = "sat-reveal__handle";
+  handle.style.display = "none";
+  const bar = document.createElement("div");
+  bar.className = "sat-reveal__bar";
+  const grip = document.createElement("div");
+  grip.className = "sat-reveal__grip";
+  grip.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6 3 12l5 6M16 6l5 6-5 6" /></svg>';
+  handle.appendChild(bar);
+  handle.appendChild(grip);
+  frame.appendChild(handle);
+
+  let position = 0; // 0 (fully gray) .. 1 (fully revealed)
+  let completed = false;
+  let dragging = false;
+
+  function applyPosition() {
+    handle.style.left = `${position * 100}%`;
+    grayImg.style.clipPath = `inset(0 0 0 ${position * 100}%)`;
+  }
+  applyPosition();
+
+  function setPosition(frac) {
+    if (completed) return;
+    position = Math.max(0, Math.min(1, frac));
+    if (position >= threshold) {
+      position = 1;
+      completed = true;
+    }
+    applyPosition();
+    if (completed) {
+      handle.style.display = "none";
+      onComplete();
+    }
+  }
+
+  function pointFromEvent(e) {
+    const rect = frame.getBoundingClientRect();
+    return (e.clientX - rect.left) / rect.width;
+  }
+
+  function onPointerDown(e) {
+    if (completed) return;
+    dragging = true;
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {}
+    setPosition(pointFromEvent(e));
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    setPosition(pointFromEvent(e));
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onPointerUp(e) {
+    dragging = false;
+    try {
+      handle.releasePointerCapture(e.pointerId);
+    } catch {}
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  handle.addEventListener("pointerdown", onPointerDown);
+  handle.addEventListener("pointermove", onPointerMove);
+  handle.addEventListener("pointerup", onPointerUp);
+  handle.addEventListener("pointercancel", onPointerUp);
+  // Same reasoning as the rub-reveal canvas above - keep a horizontal drag
+  // here from also being read as a page-swipe.
+  handle.addEventListener("touchstart", (e) => e.stopPropagation());
+  handle.addEventListener("touchmove", (e) => e.stopPropagation());
+
+  return handle;
 }

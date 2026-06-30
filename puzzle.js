@@ -411,12 +411,25 @@ function createJigsawPuzzle(container, { src, alt, cols, rows }) {
     }
   }
 
+  // boardWrap.getBoundingClientRect() reflects the real, on-screen
+  // rendered size, but every piece's own position (and dispW/dispH etc.)
+  // is always in fixed design pixels - the whole book now scales
+  // uniformly (see fitStage() in app.js) - so dividing out that scale
+  // factor here keeps hit-testing/dragging exactly under the pointer at
+  // any zoom level instead of drifting.
+  function localXY(clientX, clientY, rect) {
+    const scaleX = rect.width / boardWrap.clientWidth;
+    const scaleY = rect.height / boardWrap.clientHeight;
+    return { x: (clientX - rect.left) / scaleX, y: (clientY - rect.top) / scaleY };
+  }
+
   /* ── Hit-testing: pick the topmost piece that is actually opaque at
      this point, so transparent tab/blank margins don't block clicks
      meant for a piece underneath. ──────────────────────────────────── */
   function findPieceAt(clientX, clientY) {
     const stack = document.elementsFromPoint(clientX, clientY);
     const wrapRect = boardWrap.getBoundingClientRect();
+    const { x: localX, y: localY } = localXY(clientX, clientY, wrapRect);
     for (const el of stack) {
       const piece = pieceByCanvas.get(el);
       if (!piece) continue;
@@ -424,10 +437,10 @@ function createJigsawPuzzle(container, { src, alt, cols, rows }) {
       if (canvasReadBlocked) return piece;
 
       const pos = pieceAbsolutePos(piece);
-      const boxLeft = wrapRect.left + pos.x - marginCss;
-      const boxTop = wrapRect.top + pos.y - marginCss;
-      const sx = clientX - (boxLeft + pieceCssW / 2);
-      const sy = clientY - (boxTop + pieceCssH / 2);
+      const boxLeft = pos.x - marginCss;
+      const boxTop = pos.y - marginCss;
+      const sx = localX - (boxLeft + pieceCssW / 2);
+      const sy = localY - (boxTop + pieceCssH / 2);
       let lx, ly;
       switch (effectiveRotation(piece)) {
         case 90: lx = sy; ly = -sx; break;
@@ -497,10 +510,11 @@ function createJigsawPuzzle(container, { src, alt, cols, rows }) {
 
     const group = piece.group;
     const wrapRect = boardWrap.getBoundingClientRect();
+    const { x: downX, y: downY } = localXY(e.clientX, e.clientY, wrapRect);
     drag = {
       group,
-      offsetX: e.clientX - wrapRect.left - group.anchorX,
-      offsetY: e.clientY - wrapRect.top - group.anchorY,
+      offsetX: downX - group.anchorX,
+      offsetY: downY - group.anchorY,
       bounds: getGroupBounds(group),
       startClientX: e.clientX,
       startClientY: e.clientY,
@@ -525,12 +539,13 @@ function createJigsawPuzzle(container, { src, alt, cols, rows }) {
     }
 
     const wrapRect = boardWrap.getBoundingClientRect();
+    const { x: moveX, y: moveY } = localXY(e.clientX, e.clientY, wrapRect);
     const b = drag.bounds;
     const minAnchorX = -b.minX, maxAnchorX = Math.max(minAnchorX, boardWrap.clientWidth - b.maxX);
     const minAnchorY = -b.minY, maxAnchorY = Math.max(minAnchorY, boardWrap.clientHeight - b.maxY);
 
-    let x = e.clientX - wrapRect.left - drag.offsetX;
-    let y = e.clientY - wrapRect.top - drag.offsetY;
+    let x = moveX - drag.offsetX;
+    let y = moveY - drag.offsetY;
     x = Math.min(Math.max(minAnchorX, x), maxAnchorX);
     y = Math.min(Math.max(minAnchorY, y), maxAnchorY);
 

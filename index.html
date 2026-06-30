@@ -29,16 +29,75 @@
     </div>
   </div>
 
-  <div id="rotateOverlay">
-    <div class="rotate-card">
-      <div class="rotate-icon">&#x21BB;</div>
-      <p>Please rotate your iPad to portrait to read this storybook.</p>
-    </div>
-  </div>
-
   <script src="data.js"></script>
   <script src="puzzle.js"></script>
   <script src="reveal.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
+
+<!--
+====================================================================
+CHEAT SHEET - layout terminology & image asset requirements
+(see data.js for the live, authoritative schema/comments)
+====================================================================
+
+CANVAS
+  Fixed design canvas: 820 x 1180px (iPad Air 11" M2/M3 CSS points,
+  ratio 0.6949). Nothing inside is responsive - every image, gap, and
+  font size is a literal pixel value against this canvas. The whole
+  canvas scales UNIFORMLY (#stage + fitStage() in app.js) to fit any
+  real screen, never stretched - letterboxed on whichever axis doesn't
+  match. Margin around the page edge, and the gap between any two
+  images on it, is always 16px.
+
+PAGE LAYOUTS ( `layout` in data.js )
+  full        1 image, fills the whole page          e.g. cover page
+  1-over-1    2 images, stacked (solo / solo)         e.g. page 2
+  2-over-1    3 images: split row over solo row       e.g. page 1
+  1-over-2    3 images: solo row over split row
+  2-over-2    4 images: split row over split row
+
+  "solo" = one full-width image in that row.
+  "split" = two images side by side in that row.
+  `images` is listed in reading order: row 1 first (left-to-right if
+  split), then row 2.
+
+IMAGE SLOT SIZES (design-canvas px, 16px margin/gap already applied)
+  Slot type          1x size      Min asset size (2x)    Ratio
+  full               788x1148     1576x2296              0.6864
+  solo (half-row)    788x566      1576x1132              1.3922
+  duo-split (1/4)    386x566      772x1132               0.6822
+
+AI IMAGE GENERATION (preset-ratio workflow - tool has no custom AR)
+  full / duo-split slots  -> generate portrait  2:3
+  solo slots              -> generate landscape 3:2
+  Minimum generation resolution so nothing upscales after the crop:
+    full        (2:3) >= 1576 x 2364
+    duo-split   (2:3) >= 772  x 1158
+    solo        (3:2) >= 1698 x 1132
+  object-fit: cover trims the small gap between the preset ratio and
+  the slot's exact ratio (~2-3% off top/bottom for full/duo-split,
+  ~8% off left/right for solo) - nudge `objectPosition` per image if
+  something important sits near an edge.
+
+TEXT OVERLAYS (per image in data.js)
+  textZone          "banner" | "card" | "bubble" | "modal"
+  textZonePosition  "top" | "bottom" | "left" | "right"
+                      (banner/card only, default "bottom")
+  bubbleX / bubbleY point anchor in % of the slot (bubble only)
+  caption           string -> shown all at once
+                    array  -> "beats", tap-through with a Next button
+
+OTHER PER-IMAGE FIELDS
+  objectPosition    CSS object-position syntax, nudges the cover crop
+  reveal            true = blurred "scratch off to reveal" minigame
+  revealLabel       overrides the default printed label
+  revealThreshold   0-1, default 0.9 - how much must be cleared
+
+BOOKEND-ONLY FIELDS (COVER_PAGE / END_PAGE in data.js)
+  watermark         big bold red text stamped over the page
+  puzzle            { cols, rows } - turns the page into a jigsaw of
+                    `src`/`alt` instead of a normal image page
+====================================================================
+-->

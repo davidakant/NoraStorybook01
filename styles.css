@@ -8,11 +8,6 @@
   --pink-deep: #e0468f;
   --gold: #ffd166;
   --teal: #4fd6c4;
-  --safe-t: env(safe-area-inset-top, 0px);
-  --safe-b: env(safe-area-inset-bottom, 0px);
-  --safe-l: env(safe-area-inset-left, 0px);
-  --safe-r: env(safe-area-inset-right, 0px);
-  --ipad-ratio: 0.75; /* width / height, classic iPad portrait (3:4) */
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +15,7 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: var(--bg-deep);
+  background: #0b0a12;
   overscroll-behavior: none;
 }
 
@@ -31,19 +26,32 @@ body {
   touch-action: none;
 }
 
+/* The whole book is a fixed 820x1180px design canvas (#app, an iPad Air
+   11" CSS-point size) that never changes shape internally - every image,
+   gap, and font-size below is a literal pixel value against that canvas.
+   #stage is the real, variable-size viewport: it pads in the device's
+   safe area, then centers #app and JS (see app.js's fitStage) scales it
+   uniformly - same factor on both axes, never stretched - to be as large
+   as possible while fully fitting. Whatever doesn't match the canvas's
+   ratio shows as letterbox bars in this background color, on any device,
+   any orientation - there's no separate "desktop preview" mode anymore,
+   every screen just gets fit-to-size the same way. */
 #stage {
   position: fixed;
   inset: 0;
-  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #0b0a12;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 #app {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 820px;
+  height: 1180px;
+  flex: none;
   display: flex;
   flex-direction: column;
   background:
@@ -51,25 +59,6 @@ body {
     radial-gradient(circle at 85% 90%, #e0468f 0%, transparent 50%),
     var(--bg-deep);
   overflow: hidden;
-}
-
-/* Mouse/trackpad browsers (e.g. testing in desktop Chrome) preview the
-   storybook inside a centered, iPad-portrait-shaped frame. Real touch
-   devices (an actual iPad in Safari) skip this and stay full-bleed. */
-@media (hover: hover) and (pointer: fine) {
-  #stage {
-    background: #0b0a12;
-  }
-
-  #app {
-    width: min(96vw, 96dvh * var(--ipad-ratio));
-    height: min(96dvh, 96vw / var(--ipad-ratio));
-    border-radius: 38px;
-    border: 10px solid #1d1b24;
-    box-shadow:
-      0 30px 70px rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(255, 255, 255, 0.06);
-  }
 }
 
 /* Cover/end pages fill the entire screen - hiding the header and dots lets
@@ -85,17 +74,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: calc(6px + var(--safe-t)) 16px 5px;
+  padding: 6px 16px 5px;
   text-align: center;
 }
 
 #storyTitle {
   margin: 0;
-  font-size: clamp(15px, 3.6vw, 19px);
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.02em;
   color: #fff;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.35);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
 }
 
 #track {
@@ -114,60 +103,391 @@ body {
 }
 
 .page {
+  position: relative;
   flex: 0 0 100%;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 2px 12px 4px;
   overflow: hidden;
 }
 
-/* Cover/end pages: a single image filling the page edge to edge - no
-   padding, no panel border/shadow/rounding. */
-.page--bookend {
+/* Hard rule: every page is a fixed 16px-margin grid of 1-4 images (see
+   `layout` in data.js) - a "full" page is a single grid cell; a 2-row
+   layout splits evenly top/bottom; a split row within that splits evenly
+   left/right. Every gap (margin around the page, and between any two
+   images) is this same 16px. */
+.page-rows {
   position: relative;
-  padding: 0;
-}
-
-.media-frame--bookend {
   width: 100%;
   height: 100%;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
+  padding: 16px;
+  display: grid;
+  gap: 16px;
 }
 
-/* Stamped over a bookend page (see `watermark` in data.js) - e.g. marking a
-   draft. pointer-events: none so it never blocks the page's pan/zoom or
-   puzzle interactivity underneath. The text's font-size below is a ceiling
-   only - app.js measures it against the page width after layout and
-   shrinks the inline font-size if needed, so it's always as large as
-   possible without ever clipping past the page edge. */
-.bookend-watermark {
+.page-rows[data-rows="1"] { grid-template-rows: 1fr; }
+.page-rows[data-rows="2"] { grid-template-rows: 1fr 1fr; }
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.row[data-cols="2"] { grid-template-columns: 1fr 1fr; }
+
+.media-frame {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--bg-deep-2);
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 2px rgba(20, 10, 40, 0.55),
+    0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* Composed once via object-fit: cover with no autoplay motion of its own -
+   `objectPosition` (data.js) is the per-image nudge for when the source
+   asset's ratio doesn't exactly match its slot's ratio and the crop needs
+   to favor an edge. The reader can still pinch/drag/scroll-wheel to pan
+   and zoom (see makePanZoomInteractive in app.js); it eases back to this
+   exact rest state on its own after a couple of seconds of inactivity. */
+.media-frame .media {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 66.667%;
-  bottom: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* See makePanZoomInteractive in app.js. touch-action: none stops the
+   browser's own touch scroll/pinch-zoom from racing the JS handlers. */
+.media-frame--interactive { cursor: grab; touch-action: none; }
+.media-frame--interactive.is-grabbing { cursor: grabbing; }
+
+/* Art not ready yet for this slot - dashed placeholder instead of an img. */
+.media-frame--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  pointer-events: none;
-  z-index: 5;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.bookend-watermark span {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: clamp(100px, 35vw, 300px);
-  font-weight: 800;
-  color: #d40000;
-  opacity: 0.5;
+.media-frame__placeholder {
+  font-size: 15px;
+  color: rgba(253, 246, 232, 0.55);
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  padding: 0 12px;
+}
+
+/* Rub/scratch-to-reveal overlay (see reveal.js) - sits on top of the .media
+   img via DOM order alone, no z-index needed. */
+.reveal-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* "Drag to reveal" mini game (see createSaturationReveal in reveal.js) - a
+   desaturated clone of the frame's own image, wiped away left-to-right by
+   .sat-reveal__handle. Sits above the real image (z-index 1) but below the
+   card's own caption/arrows (z-index 2/3) so those stay readable/usable
+   throughout. Purely decorative itself - same pointer-events: none as
+   .media-frame .media - only the handle is interactive. */
+.sat-reveal__gray {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: grayscale(100%);
+  z-index: 1;
+}
+
+.sat-reveal__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  margin-left: -30px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.sat-reveal__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  margin-left: -2px;
+  background: var(--pink);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Bigger and glowing, with a slow pulse, so the grip reads as "drag me"
+   at a glance rather than blending into the bar it sits on. */
+.sat-reveal__grip {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sat-reveal-glow 1.6s ease-in-out infinite;
+}
+.sat-reveal__grip svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@keyframes sat-reveal-glow {
+  0%, 100% {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.5),
+      0 0 0 6px rgba(255, 111, 176, 0.35),
+      0 0 20px 6px rgba(255, 111, 176, 0.85);
+  }
+  50% {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.5),
+      0 0 0 10px rgba(255, 111, 176, 0.2),
+      0 0 32px 12px rgba(255, 111, 176, 1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sat-reveal__grip {
+    animation: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 18px 5px rgba(255, 111, 176, 0.9);
+  }
+}
+
+/* Text now overlays its image instead of sitting in a box below it (see
+   `textZone`/`caption` in data.js). Each zone type is its own shape/anchor;
+   .text-zone--pos-* only applies to banner/card. The zone itself ignores
+   pointer events (so it never blocks reveal/puzzle interactivity beneath
+   it) except its Next button, which needs to be clickable. */
+.text-zone {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.text-zone__text {
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Sequential-reveal pages only (see buildSequentialZones in app.js) -
+   sentence-to-sentence advances fade out then back in instead of swapping
+   instantly. */
+.text-zone__text--fade {
+  transition: opacity 220ms ease;
+}
+
+.text-zone__next {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--pink);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.text-zone__next:active { transform: scale(0.92); }
+
+/* Sentence-advance arrows for sequential-reveal pages (see
+   buildSequentialZones in app.js). Anchored to the image frame's own
+   bottom corners - not the card - so they stay clear of its text however
+   many lines the card wraps to. Plain thick chevrons, no circle behind
+   them, so they read as a control rather than covering the art. */
+.seq-arrow {
+  position: absolute;
+  bottom: 10px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.seq-arrow svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+.seq-arrow:active svg { transform: scale(0.88); }
+.seq-arrow--next { right: 10px; }
+.seq-arrow--prev { left: 10px; }
+
+/* A card's own Next arrow while its `miniGame` beat (data.js) hasn't been
+   won yet - see updateArrowEdges/advance in app.js. Same dimmed treatment
+   as .nav-arrow:disabled, just scoped to this one arrow instead of the
+   page-level nav. */
+.seq-arrow--locked {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* One-octave playable keyboard mini game for a sequential-reveal beat (see
+   createPianoGame in app.js). Lives inside that beat's own card, below its
+   caption text - .text-zone has pointer-events:none, so this opts itself
+   (and everything inside it) back in. */
+.mini-piano {
+  pointer-events: auto;
+  margin-top: 10px;
+}
+
+.mini-piano__status {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+  margin: 0 0 6px;
+}
+
+.mini-piano__keys {
+  position: relative;
+  display: flex;
+  height: 80px;
+}
+
+.mini-piano__key {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mini-piano__key--white {
+  flex: 0 0 auto;
+  height: 100%;
+  background: #fff;
+  border: 1px solid var(--ink);
+  border-radius: 0 0 6px 6px;
+  z-index: 1;
+}
+.mini-piano__key--white.is-pressed { background: var(--pink); }
+
+.mini-piano__key--black {
+  position: absolute;
+  top: 0;
+  height: 60%;
+  background: var(--ink);
+  border-radius: 0 0 4px 4px;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.mini-piano__key--black.is-pressed { background: var(--pink-deep); }
+
+.text-zone--banner {
+  left: 0;
+  right: 0;
+  padding: 12px 18px;
+  background: rgba(10, 8, 20, 0.72);
+}
+.text-zone--banner.text-zone--pos-top { top: 0; }
+.text-zone--banner.text-zone--pos-bottom { bottom: 0; }
+.text-zone--banner .text-zone__text {
+  color: #fff;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.text-zone--card {
+  padding: 6px 14px;
+  background: rgba(253, 246, 232, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+/* top/bottom cards span the full image width, with the same 14px margin
+   on every side (left/right matching the existing top-or-bottom gap)
+   instead of being centered at a fixed max-width - keeps the card as
+   short as possible so more of the image stays visible. */
+.text-zone--card.text-zone--pos-bottom { left: 54px; right: 54px; bottom: 14px; }
+.text-zone--card.text-zone--pos-top { left: 14px; right: 14px; top: 14px; }
+.text-zone--card.text-zone--pos-left { left: 14px; top: 50%; transform: translateY(-50%); max-width: 58%; }
+.text-zone--card.text-zone--pos-right { right: 14px; top: 50%; transform: translateY(-50%); max-width: 58%; }
+.text-zone--card .text-zone__text {
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.text-zone--bubble {
+  max-width: 60%;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.text-zone--bubble .text-zone__text {
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.text-zone--modal {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 80%;
+  padding: 18px 22px;
+  background: rgba(20, 14, 30, 0.85);
+  border-radius: 16px;
+  text-align: center;
+}
+.text-zone--modal .text-zone__text {
+  color: #fff;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 /* Jigsaw puzzle (the end-page bookend), ported from the "Puzzles" project -
@@ -246,7 +566,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 12px;
-  padding: 10px 16px calc(14px + var(--safe-b));
+  padding: 10px 16px 14px;
   background: rgba(10, 8, 20, 0.4);
 }
 
@@ -264,201 +584,37 @@ body {
 .puzzle-btn:disabled { opacity: 0.35; cursor: default; }
 .puzzle-btn.active { background: var(--pink); border-color: transparent; }
 
-/* Hard rule: every page has exactly 2 rows (one per paragraph), stacked one
-   over the other, each sharing the page's height equally. A row is normally
-   one full-width panel; row--split holds two panels side by side (an A/B
-   image pair) instead. */
-.page-rows {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.row {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-}
-
-.row--split {
-  gap: 8px;
-}
-
-.panel {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  gap: 4px;
-}
-
-/* No caption sibling to share with - the frame alone fills the panel. */
-.panel--no-caption {
-  gap: 0;
-}
-
-.media-frame {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 36px;
-  overflow: hidden;
-  border-radius: 16px;
-  background: var(--bg-deep-2);
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  box-shadow:
-    0 0 0 2px rgba(20, 10, 40, 0.55),
-    0 6px 16px rgba(0, 0, 0, 0.45);
-}
-
-.media-frame .media {
+/* Stamped over a bookend page (see `watermark` in data.js) - e.g. marking a
+   draft. pointer-events: none so it never blocks the page's puzzle
+   interactivity underneath. The text's font-size below is a ceiling only -
+   app.js measures it against the page width after layout and shrinks the
+   inline font-size if needed, so it's always as large as possible without
+   ever clipping past the page edge. */
+.bookend-watermark {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-/* Every image: user-driven pan/zoom, see app.js. touch-action: none stops
-   the browser's own touch scroll/pinch-zoom from racing the JS handlers. */
-.media-frame--interactive { cursor: grab; touch-action: none; }
-.media-frame--interactive.is-grabbing { cursor: grabbing; }
-
-/* Rub/scratch-to-reveal overlay (see reveal.js) - sits on top of the .media
-   img via DOM order alone, no z-index needed. */
-.reveal-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  touch-action: none;
-}
-
-/* Slow Ken Burns-style pan. object-fit: cover crops the image down to
-   exactly the frame's size first - that crop is final, so the pan transform
-   below can only slide/zoom within whatever it kept. --pan-scale (override
-   per image, default 1.3) zooms that already-cropped result so there's
-   somewhere to slide; --pan-travel is the FULL safe distance available
-   purely from that zoom (independent of frame/image ratio, since cover
-   always crops to exactly fill the frame regardless of either), so at the
-   travel extremes the image's true edge lands exactly flush with the
-   frame's edge - the pan always reaches as far as it possibly can without
-   opening a gap. Note the /(2*scale) rather than /2: translateY() is the
-   innermost function here, so its percentage (resolved against the
-   pre-scale box) gets multiplied by --pan-scale too once the outer scale()
-   composes with it - dividing by scale up front cancels that out, instead
-   of overshooting the safe margin and opening a gap at the extremes. If the
-   content you need (e.g. text near an edge) gets cropped away before the
-   pan even starts, fix that with a per-image `objectPosition` override
-   (e.g. "50% 0%" to anchor cover's crop to the top) - panning alone can't
-   recover content cover already discarded. Duration/delay are staggered
-   per image so multiple pans don't move in lockstep. Skipped for users
-   who've asked their OS for less motion. */
-@media (prefers-reduced-motion: no-preference) {
-  .media[data-pan] {
-    --pan-scale: 1.3;
-    --pan-travel: calc((var(--pan-scale) - 1) / (2 * var(--pan-scale)) * 100%);
-    animation-duration: 16s;
-    animation-timing-function: ease-in-out;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
-  }
-
-  .media[data-pan="down"] { animation-name: pan-down; }
-  .media[data-pan="up"] { animation-name: pan-up; }
-  .media[data-pan="left"] { animation-name: pan-left; }
-  .media[data-pan="right"] { animation-name: pan-right; }
-
-  @keyframes pan-down {
-    from { transform: scale(var(--pan-scale)) translateY(var(--pan-travel)); }
-    to { transform: scale(var(--pan-scale)) translateY(calc(var(--pan-travel) * -1)); }
-  }
-  @keyframes pan-up {
-    from { transform: scale(var(--pan-scale)) translateY(calc(var(--pan-travel) * -1)); }
-    to { transform: scale(var(--pan-scale)) translateY(var(--pan-travel)); }
-  }
-  @keyframes pan-left {
-    from { transform: scale(var(--pan-scale)) translateX(calc(var(--pan-travel) * -1)); }
-    to { transform: scale(var(--pan-scale)) translateX(var(--pan-travel)); }
-  }
-  @keyframes pan-right {
-    from { transform: scale(var(--pan-scale)) translateX(var(--pan-travel)); }
-    to { transform: scale(var(--pan-scale)) translateX(calc(var(--pan-travel) * -1)); }
-  }
-
-  /* Slow zoom anchored to a corner instead of sliding. Scaling from a
-     corner keeps that corner's two edges flush with the frame at any zoom
-     level (the opposite corner grows further outside it instead) - unlike
-     panning, this is always gap-safe regardless of scale, so no measuring
-     or per-image tuning is needed. */
-  .media[data-zoom] {
-    --zoom-scale: 1.3;
-    animation-name: zoom-in;
-    animation-duration: 16s;
-    animation-timing-function: ease-in-out;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
-  }
-
-  .media[data-zoom="top-left"] { transform-origin: 0% 0%; }
-  .media[data-zoom="top-right"] { transform-origin: 100% 0%; }
-  .media[data-zoom="bottom-left"] { transform-origin: 0% 100%; }
-  .media[data-zoom="bottom-right"] { transform-origin: 100% 100%; }
-  .media[data-zoom="center"] { transform-origin: 50% 50%; }
-
-  @keyframes zoom-in {
-    from { transform: scale(1); }
-    to { transform: scale(var(--zoom-scale)); }
-  }
-}
-
-/* Art not ready yet for this slot - dashed placeholder instead of an img. */
-.media-frame--empty {
+  left: 0;
+  right: 0;
+  top: 66.667%;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.04);
+  padding: 24px;
+  pointer-events: none;
+  z-index: 5;
 }
 
-.media-frame__placeholder {
-  font-size: clamp(13px, 2vh, 17px);
-  color: rgba(253, 246, 232, 0.55);
+.bookend-watermark span {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 280px;
+  font-weight: 800;
+  color: #d40000;
+  opacity: 0.5;
   text-align: center;
-  padding: 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
-
-/* No max-height cap and no scrolling, ever - the caption always takes
-   exactly the height its text needs, and the frame (flex: 1 1 auto,
-   min-height: 36px above) absorbs whatever's left. If a caption is long,
-   the image shrinks to make room rather than the text scrolling or
-   clipping. */
-.panel-caption {
-  flex: 0 0 auto;
-  margin: 0;
-  background: rgba(253, 246, 232, 0.96);
-  color: var(--ink);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-
-.panel-caption-inner {
-  padding: 4px 9px;
-  font-size: clamp(20px, 4.4vh, 30px);
-  line-height: 1.2;
-}
-
-.panel-caption-inner p { margin: 0 0 0.5em; }
-.panel-caption-inner p:last-child { margin-bottom: 0; }
 
 .nav-arrow {
   position: absolute;
@@ -491,8 +647,8 @@ body {
 .nav-arrow:active { transform: translateY(-50%) scale(0.9); }
 .nav-arrow:disabled { opacity: 0.18; pointer-events: none; }
 
-.nav-arrow--left { left: calc(10px + var(--safe-l)); }
-.nav-arrow--right { right: calc(10px + var(--safe-r)); }
+.nav-arrow--left { left: 10px; }
+.nav-arrow--right { right: 10px; }
 
 #pageIndicator {
   flex: 0 0 auto;
@@ -500,7 +656,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: 7px;
-  padding: 5px 0 calc(6px + var(--safe-b));
+  padding: 5px 0 6px;
 }
 
 #pageIndicator .dot {
@@ -514,25 +670,4 @@ body {
 #pageIndicator .dot.active {
   background: #fff;
   transform: scale(1.25);
-}
-
-#rotateOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-deep);
-  color: var(--cream);
-  text-align: center;
-  padding: 24px;
-}
-
-.rotate-card { max-width: 320px; }
-.rotate-icon { font-size: 48px; margin-bottom: 12px; }
-.rotate-card p { font-size: 18px; line-height: 1.4; }
-
-@media (orientation: landscape) and (max-device-width: 1400px) {
-  #rotateOverlay { display: flex; }
 }
