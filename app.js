@@ -262,8 +262,8 @@
       frame.appendChild(zone);
       const prevBtn = createSeqArrowButton("prev");
       const nextBtn = createSeqArrowButton("next");
-      frame.appendChild(prevBtn);
-      frame.appendChild(nextBtn);
+      zone.appendChild(prevBtn);
+      zone.appendChild(nextBtn);
       // Optional per-image `beatImages` (data.js) swaps the frame's <img>
       // src alongside the caption as the reader advances - one entry per
       // beat, same length as `caption`. Preload them up front so the swap

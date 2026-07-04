@@ -334,21 +334,36 @@ body {
 .text-zone__next:active { transform: scale(0.92); }
 
 /* Sentence-advance arrows for sequential-reveal pages (see
-   buildSequentialZones in app.js). Anchored to the image frame's own
-   bottom corners - not the card - so they stay clear of its text however
-   many lines the card wraps to. Plain thick chevrons, no circle behind
-   them, so they read as a control rather than covering the art. */
+   buildSequentialZones in app.js). Live inside their card's zone div so
+   they automatically track the card's vertical center as text reflows -
+   positioned outside the zone's left/right edges so they never overlap
+   the text. The iOS liquid-glass badge (frosted-blur rect) keeps them
+   readable against any image backdrop. */
 .seq-arrow {
   position: absolute;
-  bottom: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 3;
   width: 56px;
   height: 56px;
   padding: 0;
-  border: none;
-  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 14px;
   cursor: pointer;
   pointer-events: auto;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 111, 176, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 4px 16px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(0, 0, 0, 0.10);
 }
 .seq-arrow svg {
   width: 100%;
@@ -360,9 +375,12 @@ body {
   stroke-linejoin: round;
   animation: seq-arrow-pulse 2s ease-in-out infinite;
 }
-.seq-arrow:active svg { transform: scale(0.88); animation: none; }
-.seq-arrow--next { right: 10px; }
-.seq-arrow--prev { left: 10px; }
+.seq-arrow:active { transform: translateY(-50%) scale(0.88); }
+.seq-arrow:active svg { animation: none; }
+/* Positioned outside the card's left/right edges; 8px gap to the card
+   edge, then the 56px button, leaving ~8px to the frame border. */
+.seq-arrow--next { left: calc(100% + 8px); }
+.seq-arrow--prev { right: calc(100% + 8px); }
 
 @keyframes seq-arrow-pulse {
   0%, 100% {
@@ -464,9 +482,21 @@ body {
 
 .text-zone--card {
   padding: 6px 14px;
-  background: rgba(253, 246, 232, 0.5);
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 200, 230, 0.18) 55%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.80),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 4px 20px rgba(0, 0, 0, 0.22),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
 /* top/bottom cards span the full image width, with the same 14px margin
    on every side (left/right matching the existing top-or-bottom gap)
@@ -481,6 +511,7 @@ body {
   font-size: 19px;
   font-weight: 700;
   line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.55);
 }
 
 .text-zone--bubble {
