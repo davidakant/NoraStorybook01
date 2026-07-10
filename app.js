@@ -281,9 +281,23 @@
         beats: Array.isArray(img.caption) ? img.caption : [img.caption],
         beatIndex: 0,
         revealHandle: frame.revealHandle,
+        revealDone: false,
         miniGame: img.miniGame,
         miniGameDone: false,
       };
+
+      // If this card has a scratch-off reveal, hide its zone and arrows
+      // until the reader finishes scratching - the completion callback
+      // below makes them appear (synchronized with the canvas fade-out).
+      if (card.revealHandle) {
+        card.revealHandle.setOnComplete(() => {
+          card.revealDone = true;
+          card.zone.style.display = "";
+          card.prevBtn.style.display = "";
+          card.nextBtn.style.display = "";
+          updateArrowEdges();
+        });
+      }
 
       // Optional per-image `miniGame` (data.js) plants a small game inside
       // one specific beat of this card, gating its Next arrow until won -
@@ -319,8 +333,19 @@
     });
 
     function applyBeatImage(card) {
-      if (card.mediaEl && card.beatImages && card.beatImages[card.beatIndex]) {
-        card.mediaEl.src = card.beatImages[card.beatIndex];
+      if (!card.mediaEl || !card.beatImages) return;
+      const newSrc = card.beatImages[card.beatIndex];
+      if (!newSrc) return;
+      card.mediaEl.src = newSrc;
+      // If the caller faded the image out before calling us, fade it back in
+      // once the new src is ready (handles both cached and uncached images).
+      if (card.mediaEl.style.opacity === "0") {
+        const show = () => { card.mediaEl.style.opacity = ""; };
+        card.mediaEl.addEventListener("load", show, { once: true });
+        if (card.mediaEl.complete && card.mediaEl.naturalWidth > 0) {
+          card.mediaEl.removeEventListener("load", show);
+          show();
+        }
       }
     }
 
@@ -347,6 +372,9 @@
         if (!c.miniGame) return;
         const onGameBeat = c === card && c.beatIndex === c.miniGame.beatIndex;
         if (c.miniGameEl) c.miniGameEl.style.display = onGameBeat ? "" : "none";
+        // Trigger the one-shot drag hint the first time the saturation handle
+        // becomes visible (playHintOnce guards against replaying itself).
+        if (onGameBeat && c.miniGameEl?.playHintOnce) c.miniGameEl.playHintOnce();
         c.nextBtn.classList.toggle("seq-arrow--locked", onGameBeat && !c.miniGameDone);
       });
     }
@@ -354,9 +382,13 @@
     function showCard(index, beatIndex) {
       cards.forEach((c, i) => {
         const isActive = i === index;
-        c.zone.style.display = isActive ? "" : "none";
-        c.prevBtn.style.display = isActive ? "" : "none";
-        c.nextBtn.style.display = isActive ? "" : "none";
+        // Reveal-gated cards hide their zone and arrows until scratching
+        // completes - the revealHandle.setOnComplete callback above shows
+        // them; until then the image is visible but the card is not.
+        const showContent = isActive && (!c.revealHandle || c.revealDone);
+        c.zone.style.display = showContent ? "" : "none";
+        c.prevBtn.style.display = showContent ? "" : "none";
+        c.nextBtn.style.display = showContent ? "" : "none";
       });
       const card = cards[index];
       card.beatIndex = beatIndex;
@@ -370,10 +402,16 @@
     function advance() {
       if (transitioning) return;
       const card = cards[cardIndex];
+      if (card.revealHandle && !card.revealDone) return;
       if (card.miniGame && card.beatIndex === card.miniGame.beatIndex && !card.miniGameDone) return;
       if (card.beatIndex < card.beats.length - 1) {
         transitioning = true;
         card.textEl.style.opacity = "0";
+        // Fade image out in sync with text if the next beat uses a different image.
+        if (card.mediaEl && card.beatImages &&
+            card.beatImages[card.beatIndex + 1] !== card.beatImages[card.beatIndex]) {
+          card.mediaEl.style.opacity = "0";
+        }
         setTimeout(() => {
           card.beatIndex++;
           card.textEl.textContent = card.beats[card.beatIndex];
@@ -394,6 +432,10 @@
       if (card.beatIndex > 0) {
         transitioning = true;
         card.textEl.style.opacity = "0";
+        if (card.mediaEl && card.beatImages &&
+            card.beatImages[card.beatIndex - 1] !== card.beatImages[card.beatIndex]) {
+          card.mediaEl.style.opacity = "0";
+        }
         setTimeout(() => {
           card.beatIndex--;
           card.textEl.textContent = card.beats[card.beatIndex];
@@ -552,6 +594,13 @@
 
     prevBtn.disabled = current === 0;
     nextBtn.disabled = current === TOTAL - 1 || !pageUnlocked[current];
+    // Pulse the forward arrow only on sequential-reveal pages once the
+    // story gate clears - non-sequential pages were never locked, so they
+    // don't need the visual alert.
+    nextBtn.classList.toggle(
+      "nav-arrow--unlocked",
+      !!data.sequentialReveal && pageUnlocked[current] && current < TOTAL - 1
+    );
     updateIndicator();
   }
 

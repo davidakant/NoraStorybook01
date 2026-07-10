@@ -118,7 +118,7 @@ const STORY = [
       {
         src: "images/p1-1a.webp",
         alt: "Nora celebrating a 1st place finish at a swim meet",
-        width: 1790,
+        width: 1792,
         height: 2400,
         objectPosition: "50% 18%",
         textZone: "card",
@@ -136,7 +136,7 @@ const STORY = [
         textZone: "card",
         textZonePosition: "bottom",
         caption: [
-          "After a big swim meet win, she enjoyed a huge bowl of her favorite creamy macaroni and cheese.",
+          "After a big swim meet win, she enjoyed a huge bowl of her Grandpa's famous mac and cheese.",
           "Her loyal puppy, Snowy the Bichon, sat patiently by her feet.",
         ],
       },
@@ -149,7 +149,7 @@ const STORY = [
         textZonePosition: "bottom",
         caption: [
           "Later, she practiced a happy tune on the piano, brushed her teeth, and went to bed.",
-          "She fell asleep peacefully, dreaming of her goal to become an art teacher.",
+          "She fell asleep peacefully, dreaming of her future as an art teacher. And just then...",
         ],
       },
     ],
@@ -168,9 +168,8 @@ const STORY = [
         textZone: "card",
         textZonePosition: "bottom",
         caption: [
-          "When Nora opened her eyes, she was floating in a magical universe of thick, swirling paint.",
+          "When Nora opened her eyes, she was floating in a magical world of colorful swirling paint.",
           "The deep blue background and yellow stars looked exactly like her favorite masterpiece, Starry Night.",
-          "She was wearing a simple pink t-shirt.",
         ],
       },
       {
@@ -236,8 +235,8 @@ const STORY = [
       {
         src: "images/p4-1a.webp",
         alt: "Nora transforming, eyes shut, swirling pink energy surrounding her",
-        width: 1376,
-        height: 768,
+        width: 2750,
+        height: 1536,
         textZone: "card",
         textZonePosition: "bottom",
         caption: [
@@ -292,10 +291,11 @@ const STORY = [
         ],
       },
       {
-        src: "images/p5-2.webp",
+        src: "images/p5-2a.webp",
         alt: "Snowy digging in the dirt as water splashes and green vines unfurl",
-        width: 1376,
-        height: 768,
+        width: 2750,
+        height: 1536,
+        beatImages: ["images/p5-2a.webp", "images/p5-2b.webp", "images/p5-2c.webp"],
         textZone: "card",
         textZonePosition: "bottom",
         caption: [

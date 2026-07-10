@@ -167,6 +167,7 @@ body {
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+  transition: opacity 220ms ease;
 }
 
 /* See makePanZoomInteractive in app.js. touch-action: none stops the
@@ -290,6 +291,38 @@ body {
     animation: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 18px 5px rgba(255, 111, 176, 0.9);
   }
+}
+
+/* One-shot "drag me right" hint played by reveal.js when the saturation-
+   slider handle first appears - runs once then stops. The handle moves via
+   transform (doesn't disturb the JS-controlled `left` state); the gray
+   overlay is animated in lockstep via a matching clip-path animation so the
+   reader sees both the handle AND a stripe of color appear as they'd look
+   during a real drag. Both classes are removed on pointer-down so a user
+   who grabs the handle mid-animation gets clean JS control immediately. */
+@keyframes sat-handle-hint {
+  0%   { transform: translateX(0);     }
+  30%  { transform: translateX(210px); }
+  44%  { transform: translateX(175px); }
+  56%  { transform: translateX(198px); }
+  72%  { transform: translateX(0px);   }
+  84%  { transform: translateX(22px);  }
+  100% { transform: translateX(0px);   }
+}
+@keyframes sat-gray-hint {
+  0%   { clip-path: inset(0 0 0 0px);   }
+  30%  { clip-path: inset(0 0 0 210px); }
+  44%  { clip-path: inset(0 0 0 175px); }
+  56%  { clip-path: inset(0 0 0 198px); }
+  72%  { clip-path: inset(0 0 0 0px);   }
+  84%  { clip-path: inset(0 0 0 22px);  }
+  100% { clip-path: inset(0 0 0 0px);   }
+}
+.sat-reveal__handle--hinting {
+  animation: sat-handle-hint 2.2s ease-in-out 1 0.35s both;
+}
+.sat-reveal__gray--hinting {
+  animation: sat-gray-hint 2.2s ease-in-out 1 0.35s both;
 }
 
 /* Text now overlays its image instead of sitting in a box below it (see
@@ -703,6 +736,34 @@ body {
 
 .nav-arrow--left { left: 10px; }
 .nav-arrow--right { right: 10px; }
+
+/* Pulsing pink ring added by updateChrome() once a sequential-reveal page
+   is completed - alerts the reader that the forward nav just unlocked. */
+.nav-arrow--right.nav-arrow--unlocked {
+  animation: nav-unlock-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes nav-unlock-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 111, 176, 0.65),
+      0 0 10px 4px rgba(255, 111, 176, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(255, 111, 176, 0.22),
+      0 0 24px 10px rgba(255, 111, 176, 0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-arrow--right.nav-arrow--unlocked {
+    animation: none;
+    box-shadow:
+      0 0 0 3px rgba(255, 111, 176, 0.8),
+      0 0 16px 5px rgba(255, 111, 176, 0.7);
+  }
+}
 
 #pageIndicator {
   flex: 0 0 auto;

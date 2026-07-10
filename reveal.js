@@ -38,6 +38,7 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
   let coverageQueued = false;
   let finished = false;
   let locked = initiallyLocked;
+  let completionCallback = null;
 
   function brushRadius() {
     return Math.max(BRUSH_MIN, Math.min(cw, ch) * BRUSH_FRACTION);
@@ -161,6 +162,7 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
   }
 
   function finishReveal() {
+    if (completionCallback) completionCallback();
     finished = true;
     canvas.style.pointerEvents = "none";
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -224,6 +226,9 @@ function createRubReveal(frame, { src, label = "Scratch Off to Reveal", threshol
       locked = false;
       if (snapshotImage.complete) layoutAndPaint(snapshotImage);
     },
+    setOnComplete(fn) {
+      completionCallback = fn;
+    },
   };
 }
 
@@ -261,6 +266,7 @@ function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {
   let position = 0; // 0 (fully gray) .. 1 (fully revealed)
   let completed = false;
   let dragging = false;
+  let hintPlayed = false;
 
   function applyPosition() {
     handle.style.left = `${position * 100}%`;
@@ -289,6 +295,10 @@ function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {
 
   function onPointerDown(e) {
     if (completed) return;
+    // Cancel the hint animation the moment the user touches the handle so
+    // JS position control takes over cleanly with no animation interference.
+    handle.classList.remove("sat-reveal__handle--hinting");
+    grayImg.classList.remove("sat-reveal__gray--hinting");
     dragging = true;
     try {
       handle.setPointerCapture(e.pointerId);
@@ -322,6 +332,30 @@ function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {
   // here from also being read as a page-swipe.
   handle.addEventListener("touchstart", (e) => e.stopPropagation());
   handle.addEventListener("touchmove", (e) => e.stopPropagation());
+
+  // Called by updateArrowEdges (app.js) the first time this handle is shown.
+  // Plays a bouncy right-left demo so the reader knows to drag it. The gray
+  // overlay animates in sync so a stripe of color appears during the demo.
+  // Respects prefers-reduced-motion; guards itself so it only ever plays once.
+  handle.playHintOnce = function () {
+    if (hintPlayed || completed) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      hintPlayed = true;
+      return;
+    }
+    hintPlayed = true;
+    // Remove inline clip-path so the CSS animation can drive it; restore on end.
+    const savedClip = grayImg.style.clipPath;
+    grayImg.style.clipPath = "";
+    handle.classList.add("sat-reveal__handle--hinting");
+    grayImg.classList.add("sat-reveal__gray--hinting");
+    handle.addEventListener("animationend", function restore() {
+      handle.removeEventListener("animationend", restore);
+      handle.classList.remove("sat-reveal__handle--hinting");
+      grayImg.classList.remove("sat-reveal__gray--hinting");
+      grayImg.style.clipPath = savedClip;
+    }, { once: true });
+  };
 
   return handle;
 }
