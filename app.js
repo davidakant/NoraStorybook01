@@ -951,5 +951,64 @@
     if (frame.querySelector(".media")) makePanZoomInteractive(frame);
   });
 
+  // Double-click (desktop) or double-tap (touch) any caption word to hear it
+  // pronounced. Text is non-selectable (user-select: none in CSS) so this is
+  // the only way to interact with it. Uses the Web Speech API - no libraries.
+  function initWordSpeak() {
+    if (!window.speechSynthesis) return;
+
+    function wordAtPoint(clientX, clientY) {
+      let range;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(clientX, clientY);
+      } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(clientX, clientY);
+        if (!pos) return "";
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.setEnd(pos.offsetNode, pos.offset);
+      }
+      if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return "";
+      const text = range.startContainer.textContent;
+      let s = range.startOffset;
+      let e = s;
+      while (s > 0 && /\w/.test(text[s - 1])) s--;
+      while (e < text.length && /\w/.test(text[e])) e++;
+      return text.slice(s, e);
+    }
+
+    function speak(word) {
+      if (!word) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = "en-US";
+      window.speechSynthesis.speak(u);
+    }
+
+    document.addEventListener("dblclick", (e) => {
+      if (!e.target.closest(".text-zone__text")) return;
+      speak(wordAtPoint(e.clientX, e.clientY));
+    });
+
+    // Manual double-tap detector for touch devices - dblclick synthesis on
+    // touch can be unreliable on iOS, especially on non-interactive elements.
+    let lastTap = { time: 0, x: 0, y: 0 };
+    document.addEventListener("touchend", (e) => {
+      if (!e.target.closest(".text-zone__text")) return;
+      const t = e.changedTouches[0];
+      const now = Date.now();
+      const dx = t.clientX - lastTap.x;
+      const dy = t.clientY - lastTap.y;
+      if (now - lastTap.time < 350 && Math.hypot(dx, dy) < 30) {
+        speak(wordAtPoint(t.clientX, t.clientY));
+        e.preventDefault();
+        lastTap.time = 0;
+      } else {
+        lastTap = { time: now, x: t.clientX, y: t.clientY };
+      }
+    }, { passive: false });
+  }
+  initWordSpeak();
+
   window.__puzzles = puzzlesByRailIndex; // debug hook, see puzzle.js's __debug* methods
 })();
