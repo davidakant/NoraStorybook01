@@ -302,27 +302,27 @@ body {
    who grabs the handle mid-animation gets clean JS control immediately. */
 @keyframes sat-handle-hint {
   0%   { transform: translateX(0);     }
-  30%  { transform: translateX(210px); }
-  44%  { transform: translateX(175px); }
-  56%  { transform: translateX(198px); }
+  30%  { transform: translateX(100px); }
+  44%  { transform: translateX(83px);  }
+  56%  { transform: translateX(94px);  }
   72%  { transform: translateX(0px);   }
-  84%  { transform: translateX(22px);  }
+  84%  { transform: translateX(10px);  }
   100% { transform: translateX(0px);   }
 }
 @keyframes sat-gray-hint {
-  0%   { clip-path: inset(0 0 0 0px);   }
-  30%  { clip-path: inset(0 0 0 210px); }
-  44%  { clip-path: inset(0 0 0 175px); }
-  56%  { clip-path: inset(0 0 0 198px); }
+  0%   { clip-path: inset(0 0 0 0px);  }
+  30%  { clip-path: inset(0 0 0 100px); }
+  44%  { clip-path: inset(0 0 0 83px);  }
+  56%  { clip-path: inset(0 0 0 94px);  }
   72%  { clip-path: inset(0 0 0 0px);   }
-  84%  { clip-path: inset(0 0 0 22px);  }
+  84%  { clip-path: inset(0 0 0 10px);  }
   100% { clip-path: inset(0 0 0 0px);   }
 }
 .sat-reveal__handle--hinting {
-  animation: sat-handle-hint 2.2s ease-in-out 1 0.35s both;
+  animation: sat-handle-hint 2.2s ease-in-out infinite 0.35s both;
 }
 .sat-reveal__gray--hinting {
-  animation: sat-gray-hint 2.2s ease-in-out 1 0.35s both;
+  animation: sat-gray-hint 2.2s ease-in-out infinite 0.35s both;
 }
 
 /* Text now overlays its image instead of sitting in a box below it (see

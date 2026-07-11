@@ -88,7 +88,6 @@
 const COVER_PAGE = {
   kind: "bookend",
   layout: "full",
-  watermark: "DRAFT 2",
   images: [
     {
       src: "images/cover.webp",
@@ -388,7 +387,7 @@ const STORY = [
         textZone: "card",
         textZonePosition: "bottom",
         caption: [
-          "Nora had saved the day, and now she was bringing the magic to life with her art, exactly as she wanted to do as a future art teacher.",
+          "Nora had saved the day, and now she was bringing the magical beauty of color and art to life.",
           "She realized that even when she wasn't a superhero, she could still use her creativity to make the world a more colorful, wonderful place.",
         ],
       },

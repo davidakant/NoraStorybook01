@@ -334,9 +334,10 @@ function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {
   handle.addEventListener("touchmove", (e) => e.stopPropagation());
 
   // Called by updateArrowEdges (app.js) the first time this handle is shown.
-  // Plays a bouncy right-left demo so the reader knows to drag it. The gray
-  // overlay animates in sync so a stripe of color appears during the demo.
-  // Respects prefers-reduced-motion; guards itself so it only ever plays once.
+  // Starts a continuous bouncy demo that loops until the reader drags the
+  // handle to completion. The gray overlay animates in sync. Cancelled on
+  // pointer-down so JS position control takes over cleanly. Respects
+  // prefers-reduced-motion; guards itself so the setup only runs once.
   handle.playHintOnce = function () {
     if (hintPlayed || completed) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -344,17 +345,12 @@ function createSaturationReveal(frame, { src, threshold = 0.96, onComplete } = {
       return;
     }
     hintPlayed = true;
-    // Remove inline clip-path so the CSS animation can drive it; restore on end.
-    const savedClip = grayImg.style.clipPath;
+    // Clear inline clip-path so the CSS animation can drive it freely;
+    // onPointerDown restores JS control by removing the classes and calling
+    // setPosition(), which re-applies applyPosition() inline.
     grayImg.style.clipPath = "";
     handle.classList.add("sat-reveal__handle--hinting");
     grayImg.classList.add("sat-reveal__gray--hinting");
-    handle.addEventListener("animationend", function restore() {
-      handle.removeEventListener("animationend", restore);
-      handle.classList.remove("sat-reveal__handle--hinting");
-      grayImg.classList.remove("sat-reveal__gray--hinting");
-      grayImg.style.clipPath = savedClip;
-    }, { once: true });
   };
 
   return handle;
