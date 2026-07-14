@@ -116,6 +116,7 @@ const STORY = [
     images: [
       {
         src: "images/p1-1a.webp",
+        video: "videos/p1-1a.mp4",
         alt: "Nora celebrating a 1st place finish at a swim meet",
         width: 1792,
         height: 2400,
@@ -129,6 +130,7 @@ const STORY = [
       },
       {
         src: "images/p1-1b.png",
+        video: "videos/p1-1b.mp4",
         alt: "Nora eating a big bowl of macaroni and cheese with Snowy at her feet",
         width: 848,
         height: 1264,
@@ -141,6 +143,7 @@ const STORY = [
       },
       {
         src: "images/p1-2.webp",
+        video: "videos/p1-2.mp4",
         alt: "Nora asleep in bed, dreaming of becoming an art teacher, with Snowy curled up on the rug",
         width: 2752,
         height: 1536,
@@ -161,6 +164,7 @@ const STORY = [
     images: [
       {
         src: "images/p2-1.webp",
+        video: "videos/p2-1.mp4",
         alt: "Nora floating in a swirling Starry Night-like painted universe",
         width: 2752,
         height: 1536,
@@ -173,6 +177,7 @@ const STORY = [
       },
       {
         src: "images/p2-2a.webp",
+        video: "videos/p2-2a.mp4",
         alt: "The painted rivers below, still full of vibrant, swirling color",
         width: 2748,
         height: 1536,
@@ -194,6 +199,7 @@ const STORY = [
     images: [
       {
         src: "images/p3-1a.png",
+        video: "videos/p3-1a.mp4",
         alt: "The Eraser, a grumpy villain in a gray eraser costume, standing on the dry cracked terrain",
         width: 1696,
         height: 2528,
@@ -203,6 +209,7 @@ const STORY = [
       },
       {
         src: "images/p3-1b.png",
+        video: "videos/p3-1b.mp4",
         alt: "Snowy barking next to The Eraser's giant industrial vacuum",
         width: 1696,
         height: 2528,
@@ -212,6 +219,7 @@ const STORY = [
       },
       {
         src: "images/p3-2.webp",
+        video: "videos/p3-2.mp4",
         alt: "The Eraser's vacuum sucking up swirling paint-water",
         width: 2752,
         height: 1536,

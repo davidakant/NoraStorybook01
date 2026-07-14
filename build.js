@@ -61,6 +61,15 @@ async function main() {
     );
   }
 
+  // Videos: per-slot animated versions (see `video` in data.js) - already
+  // web-encoded (H.264 + faststart), copied unchanged.
+  if (fs.existsSync("videos")) {
+    fs.mkdirSync(path.join(DIST, "videos"));
+    for (const file of fs.readdirSync("videos")) {
+      fs.copyFileSync(path.join("videos", file), path.join(DIST, "videos", file));
+    }
+  }
+
   // Print a quick size summary.
   console.log("dist/ built:");
   for (const f of ["bundle.min.js", "styles.css", "index.html"]) {

@@ -457,6 +457,57 @@
     showCard(0, 0);
   }
 
+  // Optional per-image `video` (data.js): overlays a <video> on top of the
+  // slot's still image plus a play button pinned to the TOP of the frame.
+  // The slot's default state is always the static image - the video only
+  // fades in (and plays) once the reader taps play, and fades back out to
+  // the still image when it ends or the reader taps the button again. The
+  // <video> loads on demand (preload="none") so it costs nothing until used.
+  function buildVideoLayer(frame, img) {
+    const video = document.createElement("video");
+    video.className = "media-video";
+    video.src = img.video;
+    video.preload = "none";
+    video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    // Mirror the still image's crop nudge so the motion lines up with it.
+    if (img.objectPosition) video.style.objectPosition = img.objectPosition;
+    frame.appendChild(video);
+
+    const btn = document.createElement("button");
+    btn.className = "media-play-btn";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Play video");
+    btn.innerHTML =
+      '<svg class="media-play-btn__play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>' +
+      '<svg class="media-play-btn__stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>';
+    frame.appendChild(btn);
+
+    function stop() {
+      frame.classList.remove("is-playing-video");
+      btn.setAttribute("aria-label", "Play video");
+      video.pause();
+      video.currentTime = 0;
+    }
+
+    function play() {
+      frame.classList.add("is-playing-video");
+      btn.setAttribute("aria-label", "Stop video");
+      video.currentTime = 0;
+      const p = video.play();
+      if (p && p.catch) p.catch(() => stop());
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (frame.classList.contains("is-playing-video")) stop();
+      else play();
+    });
+    video.addEventListener("ended", stop);
+  }
+
   function buildImageSlot(img, pageNum, rowNum, slot, eager) {
     const frame = document.createElement("div");
     frame.className = "media-frame";
@@ -483,6 +534,11 @@
           locked: !!img.revealLocked,
         });
       }
+
+      // Optional per-image `video` (data.js): the slot's default state stays
+      // the static image; a play button pinned to the top of the frame lets
+      // the reader watch an animated version. See buildVideoLayer below.
+      if (img.video) buildVideoLayer(frame, img);
     } else {
       frame.classList.add("media-frame--empty");
       const label = document.createElement("span");
@@ -834,7 +890,7 @@
       // button, or a sequential-reveal page's prev/next sentence arrows)
       // through untouched - capturing the pointer here would intercept
       // the gesture before the button's own click ever fires.
-      if (e.target.closest(".text-zone__next, .seq-arrow")) return;
+      if (e.target.closest(".text-zone__next, .seq-arrow, .media-play-btn")) return;
       if (e.pointerType === "mouse" && e.button !== 0) return;
       try {
         frame.setPointerCapture(e.pointerId);

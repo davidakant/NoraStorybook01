@@ -170,6 +170,73 @@ body {
   transition: opacity 220ms ease;
 }
 
+/* Optional per-slot animated video (see buildVideoLayer in app.js). Sits on
+   top of the still .media image (z-index 1, same layer as the sat-reveal
+   gray) but stays invisible and inert until the reader taps play - the
+   slot's default state is always the static image. .is-playing-video on the
+   frame fades it in and lets it receive no pointer input itself (the play
+   button, higher up, handles stop). */
+.media-frame .media-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.media-frame.is-playing-video .media-video { opacity: 1; }
+
+/* Play/stop button pinned to the TOP-center of a video-bearing frame (not
+   the middle), above the caption card and arrows. iOS liquid-glass badge to
+   match .seq-arrow, so it stays readable over any art. */
+.media-play-btn {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 111, 176, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 4px 16px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(0, 0, 0, 0.10);
+}
+.media-play-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: var(--pink);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+.media-play-btn__play { margin-left: 2px; } /* optically center the triangle */
+.media-play-btn:active { transform: translateX(-50%) scale(0.9); }
+/* Swap the glyph: triangle while stopped, square while playing. */
+.media-play-btn__stop { display: none; }
+.media-frame.is-playing-video .media-play-btn__play { display: none; }
+.media-frame.is-playing-video .media-play-btn__stop { display: block; }
+
 /* See makePanZoomInteractive in app.js. touch-action: none stops the
    browser's own touch scroll/pinch-zoom from racing the JS handlers. */
 .media-frame--interactive { cursor: grab; touch-action: none; }
